@@ -1,10 +1,13 @@
 import express from 'express';
 import cors from 'cors';
 import prisma from './lib/db/prisma';
+import { sessionMiddleware } from './lib/session/session';
+import authRouter from './modules/auth/auth.routes';
+import { errorHandler } from './middleware/error-handler';
 
 const app = express();
 
-// CORS — only allow requests from the client origin
+// CORS — only allow requests from the client origin with credentials
 app.use(
   cors({
     origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
@@ -14,6 +17,9 @@ app.use(
 
 // Parse JSON request bodies
 app.use(express.json());
+
+// Session management (backed by PostgreSQL)
+app.use(sessionMiddleware);
 
 // Health check endpoint
 app.get('/api/health', async (_req, res) => {
@@ -33,5 +39,11 @@ app.get('/api/health', async (_req, res) => {
     });
   }
 });
+
+// Domain modules
+app.use('/api/auth', authRouter);
+
+// Centralized error handler
+app.use(errorHandler);
 
 export default app;
