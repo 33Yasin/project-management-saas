@@ -3,6 +3,7 @@ import cors from 'cors';
 import prisma from './lib/db/prisma';
 import { sessionMiddleware } from './lib/session/session';
 import authRouter from './modules/auth/auth.routes';
+import workspacesRouter from './modules/workspaces/workspaces.routes';
 import { errorHandler } from './middleware/error-handler';
 
 const app = express();
@@ -42,6 +43,7 @@ app.get('/api/health', async (_req, res) => {
 
 // Domain modules
 app.use('/api/auth', authRouter);
+app.use('/api/workspaces', workspacesRouter);
 
 // Centralized error handler
 app.use(errorHandler);
