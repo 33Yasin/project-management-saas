@@ -12,6 +12,7 @@ import {
 
 import membersRouter from '../members/members.routes';
 import { workspaceInvitationsRouter } from '../invitations/invitations.routes';
+import { workspaceProjectsRouter } from '../projects/projects.routes';
 
 const router = Router();
 
@@ -66,8 +67,9 @@ router.post(
   }
 );
 
-// Nested routes for members & invitations
+// Nested routes for members, invitations & projects
 router.use('/:workspaceId/members', membersRouter);
 router.use('/:workspaceId/invitations', workspaceInvitationsRouter);
+router.use('/:workspaceId/projects', workspaceProjectsRouter);
 
 export default router;

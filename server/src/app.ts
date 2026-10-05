@@ -5,6 +5,7 @@ import { sessionMiddleware } from './lib/session/session';
 import authRouter from './modules/auth/auth.routes';
 import workspacesRouter from './modules/workspaces/workspaces.routes';
 import { invitationsRouter } from './modules/invitations/invitations.routes';
+import projectsRouter from './modules/projects/projects.routes';
 import { errorHandler } from './middleware/error-handler';
 
 const app = express();
@@ -46,6 +47,7 @@ app.get('/api/health', async (_req, res) => {
 app.use('/api/auth', authRouter);
 app.use('/api/workspaces', workspacesRouter);
 app.use('/api/invitations', invitationsRouter);
+app.use('/api/projects', projectsRouter);
 
 // Centralized error handler
 app.use(errorHandler);
