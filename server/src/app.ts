@@ -7,6 +7,7 @@ import workspacesRouter from './modules/workspaces/workspaces.routes';
 import { invitationsRouter } from './modules/invitations/invitations.routes';
 import projectsRouter from './modules/projects/projects.routes';
 import tasksRouter from './modules/tasks/tasks.routes';
+import commentsRouter from './modules/comments/comments.routes';
 import { errorHandler } from './middleware/error-handler';
 
 const app = express();
@@ -50,6 +51,7 @@ app.use('/api/workspaces', workspacesRouter);
 app.use('/api/invitations', invitationsRouter);
 app.use('/api/projects', projectsRouter);
 app.use('/api/tasks', tasksRouter);
+app.use('/api/comments', commentsRouter);
 
 // Centralized error handler
 app.use(errorHandler);

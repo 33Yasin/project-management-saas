@@ -11,6 +11,7 @@ import {
   taskIdParamSchema,
 } from './tasks.schemas';
 import { projectIdParamSchema } from '../projects/projects.schemas';
+import { taskCommentsRouter } from '../comments/comments.routes';
 
 // Project-scoped router (/api/projects/:projectId/tasks)
 export const projectTasksRouter = Router({ mergeParams: true });
@@ -66,5 +67,8 @@ tasksRouter.delete(
     tasksController.delete(req, res, next);
   }
 );
+
+// Nested routes for comments
+tasksRouter.use('/:taskId/comments', taskCommentsRouter);
 
 export default tasksRouter;
