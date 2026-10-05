@@ -51,8 +51,8 @@ export default function TaskDetailPage() {
       setCommentError(null);
       await createComment(newComment.trim());
       setNewComment('');
-    } catch (err: any) {
-      setCommentError(err?.message || 'Failed to post comment');
+    } catch (err) {
+      setCommentError(err instanceof Error ? err.message : 'Failed to post comment');
     }
   };
 

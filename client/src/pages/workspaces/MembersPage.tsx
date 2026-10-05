@@ -70,8 +70,8 @@ export default function MembersPage() {
         setCreatedInviteLink(link);
       }
       setInviteEmail('');
-    } catch (err: any) {
-      setInviteError(err?.message || 'Failed to create invitation');
+    } catch (err) {
+      setInviteError(err instanceof Error ? err.message : 'Failed to create invitation');
     }
   };
 

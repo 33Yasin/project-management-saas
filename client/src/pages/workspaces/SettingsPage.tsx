@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/features/auth/use-auth';
 import {
@@ -41,8 +41,14 @@ export default function SettingsPage() {
   } = useWorkspace(workspaceId);
   const { members } = useWorkspaceMembers(workspaceId);
 
-  const [name, setName] = useState('');
+  const [name, setName] = useState(workspace?.name || '');
+  const [prevWorkspaceName, setPrevWorkspaceName] = useState(workspace?.name);
   const [nameMessage, setNameMessage] = useState<string | null>(null);
+
+  if (workspace?.name && workspace.name !== prevWorkspaceName) {
+    setPrevWorkspaceName(workspace.name);
+    setName(workspace.name);
+  }
 
   // Transfer Ownership
   const [transferOpen, setTransferOpen] = useState(false);
@@ -52,12 +58,6 @@ export default function SettingsPage() {
   // Delete Workspace
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (workspace?.name) {
-      setName(workspace.name);
-    }
-  }, [workspace?.name]);
 
   const isOwner = workspace?.role === 'OWNER';
   const otherMembers = members.filter((m) => m.userId !== user?.id);
@@ -71,8 +71,8 @@ export default function SettingsPage() {
       await updateWorkspace({ name: name.trim() });
       setNameMessage('Workspace name updated successfully.');
       setTimeout(() => setNameMessage(null), 3000);
-    } catch (err: any) {
-      setNameMessage(err?.message || 'Failed to update name');
+    } catch (err) {
+      setNameMessage(err instanceof Error ? err.message : 'Failed to update name');
     }
   };
 
@@ -84,8 +84,8 @@ export default function SettingsPage() {
       await transferOwnership({ targetUserId });
       setTransferOpen(false);
       navigate(`/workspaces/${workspaceId}/projects`);
-    } catch (err: any) {
-      setTransferError(err?.message || 'Failed to transfer ownership');
+    } catch (err) {
+      setTransferError(err instanceof Error ? err.message : 'Failed to transfer ownership');
     }
   };
 
@@ -95,8 +95,8 @@ export default function SettingsPage() {
       await deleteWorkspace();
       setDeleteOpen(false);
       navigate('/workspaces', { replace: true });
-    } catch (err: any) {
-      setDeleteError(err?.message || 'Failed to delete workspace');
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : 'Failed to delete workspace');
     }
   };
 

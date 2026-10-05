@@ -101,8 +101,8 @@ export default function ProjectTasksPage() {
       setNewAssigneeId('');
       setNewDueDate('');
       setCreateOpen(false);
-    } catch (err: any) {
-      setCreateError(err?.message || 'Failed to create task');
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : 'Failed to create task');
     }
   };
 

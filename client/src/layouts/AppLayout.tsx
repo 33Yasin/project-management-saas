@@ -58,8 +58,8 @@ export default function AppLayout() {
       setNewWsName('');
       setCreateWsOpen(false);
       navigate(`/workspaces/${created.id}/projects`);
-    } catch (err: any) {
-      setCreateWsError(err?.message || 'Failed to create workspace');
+    } catch (err) {
+      setCreateWsError(err instanceof Error ? err.message : 'Failed to create workspace');
     }
   };
 

@@ -47,8 +47,8 @@ export default function ProjectsPage() {
       setName('');
       setDescription('');
       setCreateOpen(false);
-    } catch (err: any) {
-      setCreateError(err?.message || 'Failed to create project');
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : 'Failed to create project');
     }
   };
 
