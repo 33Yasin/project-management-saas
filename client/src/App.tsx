@@ -1,97 +1,56 @@
-import { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { queryClient } from '@/lib/query-client';
+import { ProtectedRoute } from '@/components/common/ProtectedRoute';
+
+import LoginPage from '@/pages/auth/LoginPage';
+import RegisterPage from '@/pages/auth/RegisterPage';
+import InvitationPage from '@/pages/invitations/InvitationPage';
+
+import AppLayout from '@/layouts/AppLayout';
+import WorkspacesPage from '@/pages/workspaces/WorkspacesPage';
+import MembersPage from '@/pages/workspaces/MembersPage';
+import SettingsPage from '@/pages/workspaces/SettingsPage';
+import ProjectsPage from '@/pages/projects/ProjectsPage';
+import ProjectTasksPage from '@/pages/tasks/ProjectTasksPage';
+import TaskDetailPage from '@/pages/tasks/TaskDetailPage';
 
 export default function App() {
-  const [health, setHealth] = useState<{ status: string; timestamp: string } | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  const fetchHealth = () => {
-    setLoading(true);
-    fetch('/api/health')
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
-      .then((data) => {
-        setHealth(data);
-        setError(null);
-      })
-      .catch((err) => {
-        setError(err.message);
-        setHealth(null);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  };
-
-  useEffect(() => {
-    let ignore = false;
-    fetch('/api/health')
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
-      .then((data) => {
-        if (!ignore) {
-          setHealth(data);
-          setError(null);
-        }
-      })
-      .catch((err) => {
-        if (!ignore) {
-          setError(err.message);
-          setHealth(null);
-        }
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, []);
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="bg-white rounded-lg shadow-md p-8 max-w-md w-full border border-gray-100">
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">
-          Project Management SaaS
-        </h1>
-        <p className="text-sm text-gray-500 mb-6">Phase 0 — Setup & Connectivity Check</p>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/invitations/:token" element={<InvitationPage />} />
 
-        {!health && !error && (
-          <p className="text-gray-400 text-sm">Connecting to API...</p>
-        )}
+          {/* Protected App Routes */}
+          <Route element={<ProtectedRoute />}>
+            <Route element={<AppLayout />}>
+              <Route path="/" element={<Navigate to="/workspaces" replace />} />
+              <Route path="/workspaces" element={<WorkspacesPage />} />
+              <Route
+                path="/workspaces/:workspaceId"
+                element={<Navigate to="projects" replace />}
+              />
+              <Route path="/workspaces/:workspaceId/projects" element={<ProjectsPage />} />
+              <Route path="/workspaces/:workspaceId/members" element={<MembersPage />} />
+              <Route path="/workspaces/:workspaceId/settings" element={<SettingsPage />} />
 
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-md p-4 text-red-700 mb-4">
-            <p className="font-medium text-sm">API Connection Failed</p>
-            <p className="text-xs mt-1 font-mono">{error}</p>
-          </div>
-        )}
+              <Route
+                path="/projects/:projectId"
+                element={<Navigate to="tasks" replace />}
+              />
+              <Route path="/projects/:projectId/tasks" element={<ProjectTasksPage />} />
+              <Route path="/tasks/:taskId" element={<TaskDetailPage />} />
+            </Route>
+          </Route>
 
-        {health && (
-          <div className="bg-emerald-50 border border-emerald-200 rounded-md p-4 text-emerald-800 mb-4">
-            <p className="font-semibold text-sm flex items-center gap-1.5">
-              <span>●</span> API Connected Successfully
-            </p>
-            <div className="mt-2 text-xs space-y-1 text-emerald-700 font-mono">
-              <p>Status: {health.status}</p>
-              <p>Server Time: {health.timestamp}</p>
-            </div>
-          </div>
-        )}
-
-        <div className="pt-2">
-          <Button
-            onClick={fetchHealth}
-            disabled={loading}
-            className="w-full cursor-pointer"
-          >
-            {loading ? 'Checking...' : 'Check Connection'}
-          </Button>
-        </div>
-      </div>
-    </div>
+          {/* Catch-all */}
+          <Route path="*" element={<Navigate to="/workspaces" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </QueryClientProvider>
   );
 }
