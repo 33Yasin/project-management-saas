@@ -10,6 +10,7 @@ import {
   projectIdParamSchema,
 } from './projects.schemas';
 import { workspaceIdParamSchema } from '../workspaces/workspaces.schemas';
+import { projectTasksRouter } from '../tasks/tasks.routes';
 
 // Workspace-scoped router (/api/workspaces/:workspaceId/projects)
 export const workspaceProjectsRouter = Router({ mergeParams: true });
@@ -64,5 +65,8 @@ projectsRouter.delete(
     projectsController.delete(req, res, next);
   }
 );
+
+// Nested routes for tasks
+projectsRouter.use('/:projectId/tasks', projectTasksRouter);
 
 export default projectsRouter;

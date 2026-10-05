@@ -6,6 +6,7 @@ import authRouter from './modules/auth/auth.routes';
 import workspacesRouter from './modules/workspaces/workspaces.routes';
 import { invitationsRouter } from './modules/invitations/invitations.routes';
 import projectsRouter from './modules/projects/projects.routes';
+import tasksRouter from './modules/tasks/tasks.routes';
 import { errorHandler } from './middleware/error-handler';
 
 const app = express();
@@ -48,6 +49,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/workspaces', workspacesRouter);
 app.use('/api/invitations', invitationsRouter);
 app.use('/api/projects', projectsRouter);
+app.use('/api/tasks', tasksRouter);
 
 // Centralized error handler
 app.use(errorHandler);
