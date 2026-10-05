@@ -10,6 +10,9 @@ import {
   workspaceIdParamSchema,
 } from './workspaces.schemas';
 
+import membersRouter from '../members/members.routes';
+import { workspaceInvitationsRouter } from '../invitations/invitations.routes';
+
 const router = Router();
 
 // All workspace routes require authenticated session
@@ -62,5 +65,9 @@ router.post(
     workspacesController.transferOwnership(req, res, next);
   }
 );
+
+// Nested routes for members & invitations
+router.use('/:workspaceId/members', membersRouter);
+router.use('/:workspaceId/invitations', workspaceInvitationsRouter);
 
 export default router;
