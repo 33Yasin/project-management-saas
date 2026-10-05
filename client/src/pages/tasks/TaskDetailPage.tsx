@@ -26,14 +26,14 @@ import {
 } from 'lucide-react';
 
 export default function TaskDetailPage() {
-  const { taskId } = useParams<{ taskId: string }>();
+  const { workspaceId: paramWsId, taskId } = useParams<{ workspaceId?: string; taskId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { task, isLoading, updateTask, isUpdating, deleteTask, isDeleting } = useTask(taskId);
   const { comments, createComment, isCreating, deleteComment } = useTaskComments(taskId);
 
-  const workspaceId = task?.project?.workspaceId;
-  const { members } = useWorkspaceMembers(workspaceId);
+  const currentWorkspaceId = paramWsId || task?.project?.workspaceId;
+  const { members } = useWorkspaceMembers(currentWorkspaceId);
 
   const [newComment, setNewComment] = useState('');
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -58,7 +58,12 @@ export default function TaskDetailPage() {
 
   const handleDeleteTask = async () => {
     await deleteTask();
-    navigate(`/projects/${task?.projectId}/tasks`, { replace: true });
+    navigate(
+      currentWorkspaceId && task?.projectId
+        ? `/workspaces/${currentWorkspaceId}/projects/${task.projectId}/tasks`
+        : '/workspaces',
+      { replace: true }
+    );
   };
 
   if (isLoading) {
@@ -74,10 +79,10 @@ export default function TaskDetailPage() {
       <div className="p-12 text-center">
         <p className="text-base font-semibold mb-2">Task not found</p>
         <Link
-          to="/workspaces"
+          to={currentWorkspaceId ? `/workspaces/${currentWorkspaceId}/projects` : '/workspaces'}
           className={cn(buttonVariants({ variant: 'outline' }))}
         >
-          Back to Workspaces
+          Back to Projects
         </Link>
       </div>
     );
@@ -88,7 +93,11 @@ export default function TaskDetailPage() {
       {/* Header & Breadcrumb */}
       <div className="flex items-center justify-between gap-4">
         <Link
-          to={`/projects/${task.projectId}/tasks`}
+          to={
+            currentWorkspaceId && task.projectId
+              ? `/workspaces/${currentWorkspaceId}/projects/${task.projectId}/tasks`
+              : '/workspaces'
+          }
           className="inline-flex items-center text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
           <ChevronLeft className="size-4 mr-1" />

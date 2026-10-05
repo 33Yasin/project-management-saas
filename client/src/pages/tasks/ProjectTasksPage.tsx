@@ -34,9 +34,10 @@ import {
 } from 'lucide-react';
 
 export default function ProjectTasksPage() {
-  const { projectId } = useParams<{ projectId: string }>();
+  const { workspaceId: paramWsId, projectId } = useParams<{ workspaceId?: string; projectId: string }>();
   const { project, updateProject } = useProject(projectId);
-  const { members } = useWorkspaceMembers(project?.workspaceId);
+  const currentWorkspaceId = paramWsId || project?.workspaceId;
+  const { members } = useWorkspaceMembers(currentWorkspaceId);
 
   // Filters state
   const [search, setSearch] = useState('');
@@ -159,7 +160,7 @@ export default function ProjectTasksPage() {
         <div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
             <Link
-              to={`/workspaces/${project?.workspaceId}/projects`}
+              to={`/workspaces/${currentWorkspaceId}/projects`}
               className="hover:text-foreground flex items-center gap-1"
             >
               <FolderKanban className="size-3.5" /> Projects
@@ -330,7 +331,7 @@ export default function ProjectTasksPage() {
                     >
                       <td className="px-4 py-3.5 font-medium">
                         <Link
-                          to={`/tasks/${task.id}`}
+                          to={`/workspaces/${currentWorkspaceId}/projects/${projectId}/tasks/${task.id}`}
                           className="flex items-center gap-2 text-foreground group-hover:text-primary transition-colors"
                         >
                           <span className="font-medium">{task.title}</span>

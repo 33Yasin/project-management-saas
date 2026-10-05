@@ -45,8 +45,11 @@ export default function AppLayout() {
   const [wsSwitchOpen, setWsSwitchOpen] = useState(false);
   const [createWsError, setCreateWsError] = useState<string | null>(null);
 
-  const activeWorkspace =
-    workspace || workspaces.find((w) => w.id === workspaceId) || workspaces[0];
+  const isWorkspacesHome = location.pathname === '/workspaces';
+
+  const activeWorkspace = isWorkspacesHome
+    ? null
+    : workspace || workspaces.find((w) => w.id === workspaceId) || null;
 
   const handleCreateWorkspace = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,7 +93,13 @@ export default function AppLayout() {
             ]
           : []),
       ]
-    : [];
+    : [
+        {
+          name: 'All Workspaces',
+          path: '/workspaces',
+          icon: Building2,
+        },
+      ];
 
   return (
     <div className="min-h-screen flex bg-background text-foreground">
@@ -247,7 +256,7 @@ export default function AppLayout() {
             </button>
             <div className="flex items-center gap-2 text-sm">
               <span className="font-semibold text-foreground">
-                {activeWorkspace?.name || 'Dashboard'}
+                {activeWorkspace?.name || 'Workspaces'}
               </span>
             </div>
           </div>

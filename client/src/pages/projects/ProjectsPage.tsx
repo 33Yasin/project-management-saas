@@ -111,7 +111,7 @@ export default function ProjectsPage() {
               </CardHeader>
               <CardFooter className="pt-2">
                 <Link
-                  to={`/projects/${project.id}/tasks`}
+                  to={`/workspaces/${workspaceId}/projects/${project.id}/tasks`}
                   className={cn(buttonVariants({ variant: 'outline' }), 'w-full justify-between cursor-pointer')}
                 >
                   <span>View Tasks</span>
