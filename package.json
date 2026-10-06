@@ -2,7 +2,7 @@
   "name": "project-management-saas",
   "private": true,
   "scripts": {
-    "install:all": "npm install --prefix server && npm install --prefix client",
+    "install:all": "npm install --prefix server --include=dev && npm install --prefix client --include=dev",
     "build:server": "npm run build --prefix server",
     "build:client": "npm run build --prefix client",
     "build": "npm run build --prefix client && npm run build --prefix server",
