@@ -1,8 +1,9 @@
 import { ErrorRequestHandler } from 'express';
 import { AppError } from '../errors/app-error';
 import { ErrorCode } from '../errors/error-codes';
+import { logger } from '../lib/logger';
 
-export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
+export const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   if (err instanceof AppError) {
     res.status(err.statusCode).json({
       error: {
@@ -14,10 +15,13 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     return;
   }
 
-  // Log unexpected errors on server console, never expose raw DB/stack traces to production clients
-  if (process.env.NODE_ENV !== 'test') {
-    console.error('Unhandled Error:', err);
-  }
+  // Log unexpected errors securely without leaking raw DB details or stack traces to clients
+  logger.error('Unhandled internal server error', {
+    path: req.originalUrl,
+    method: req.method,
+    error: err instanceof Error ? err.message : String(err),
+    stack: err instanceof Error ? err.stack : undefined,
+  });
 
   res.status(500).json({
     error: {

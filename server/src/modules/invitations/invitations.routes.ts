@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { requireAuth } from '../../middleware/require-auth';
 import { requireWorkspaceRole } from '../../middleware/require-workspace-role';
 import { validate } from '../../middleware/validate';
+import { invitationRateLimiter } from '../../middleware/rate-limiter';
 import { invitationsController } from './invitations.controller';
 import {
   createInvitationSchema,
@@ -27,6 +28,7 @@ workspaceInvitationsRouter.get(
 // POST /api/workspaces/:workspaceId/invitations
 workspaceInvitationsRouter.post(
   '/',
+  invitationRateLimiter,
   validate({ params: workspaceIdParamSchema, body: createInvitationSchema }),
   (req, res, next) => {
     invitationsController.create(req, res, next);
@@ -57,6 +59,7 @@ invitationsRouter.get(
 // POST /api/invitations/:token/accept (Requires authentication)
 invitationsRouter.post(
   '/:token/accept',
+  invitationRateLimiter,
   requireAuth,
   validate({ params: tokenParamSchema }),
   (req, res, next) => {

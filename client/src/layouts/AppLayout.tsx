@@ -134,7 +134,11 @@ export default function AppLayout() {
         <div className="p-3 border-b border-border">
           <div className="relative">
             <button
+              type="button"
               onClick={() => setWsSwitchOpen(!wsSwitchOpen)}
+              aria-label="Switch workspace"
+              aria-expanded={wsSwitchOpen}
+              aria-haspopup="true"
               className="w-full flex items-center justify-between p-2 rounded-lg border border-border bg-muted/40 hover:bg-muted/70 transition-colors text-left cursor-pointer"
             >
               <div className="flex items-center gap-2 min-w-0">
@@ -232,9 +236,11 @@ export default function AppLayout() {
               <p className="text-[11px] text-muted-foreground truncate">{user?.email}</p>
             </div>
             <button
+              type="button"
               onClick={handleLogout}
               disabled={isLoggingOut}
               title="Sign out"
+              aria-label="Sign out"
               className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
             >
               <LogOut className="size-4" />
@@ -249,8 +255,10 @@ export default function AppLayout() {
         <header className="h-14 border-b border-border bg-card px-4 flex items-center justify-between sticky top-0 z-30">
           <div className="flex items-center gap-3">
             <button
+              type="button"
               onClick={() => setMobileMenuOpen(true)}
-              className="p-1.5 rounded-md border border-border md:hidden text-foreground hover:bg-muted"
+              aria-label="Open navigation menu"
+              className="p-1.5 rounded-md border border-border md:hidden text-foreground hover:bg-muted cursor-pointer"
             >
               <Menu className="size-4" />
             </button>

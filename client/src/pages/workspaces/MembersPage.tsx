@@ -172,12 +172,14 @@ export default function MembersPage() {
                           <td className="px-4 py-3.5 text-right">
                             {canEditThisMember && (
                               <button
+                                type="button"
                                 onClick={() => {
                                   if (confirm(`Remove ${m.user.name} from this workspace?`)) {
                                     removeMember(m.id);
                                   }
                                 }}
                                 title="Remove member"
+                                aria-label={`Remove member ${m.user.name}`}
                                 className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
                               >
                                 <Trash2 className="size-4" />
@@ -234,12 +236,14 @@ export default function MembersPage() {
                       </td>
                       <td className="px-4 py-3.5 text-right">
                         <button
+                          type="button"
                           onClick={() => {
                             if (confirm(`Revoke invitation for ${inv.email}?`)) {
                               revokeInvitation(inv.id);
                             }
                           }}
                           title="Revoke invitation"
+                          aria-label={`Revoke invitation for ${inv.email}`}
                           className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer text-xs"
                         >
                           Revoke

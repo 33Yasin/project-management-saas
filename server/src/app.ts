@@ -1,7 +1,10 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import prisma from './lib/db/prisma';
 import { sessionMiddleware } from './lib/session/session';
+import { requestLogger } from './middleware/request-logger';
+import { generalRateLimiter } from './middleware/rate-limiter';
 import authRouter from './modules/auth/auth.routes';
 import workspacesRouter from './modules/workspaces/workspaces.routes';
 import { invitationsRouter } from './modules/invitations/invitations.routes';
@@ -11,6 +14,24 @@ import commentsRouter from './modules/comments/comments.routes';
 import { errorHandler } from './middleware/error-handler';
 
 const app = express();
+
+// Trust first reverse proxy in production (for HTTPS secure cookies on Render/Railway/Fly/Nginx)
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
+
+// Security headers (hides X-Powered-By, sets X-Content-Type-Options, HSTS, etc.)
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  })
+);
+
+// HTTP request logging (structured in prod, clean in dev, silent in test)
+app.use(requestLogger);
+
+// Global API rate limiting (DoS protection)
+app.use('/api', generalRateLimiter);
 
 // CORS — only allow requests from the client origin with credentials
 app.use(

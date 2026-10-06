@@ -176,8 +176,10 @@ export default function TaskDetailPage() {
                           </div>
                           {canDelete && (
                             <button
+                              type="button"
                               onClick={() => deleteComment(comment.id)}
                               title="Delete comment"
+                              aria-label="Delete comment"
                               className="p-1 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer transition-colors"
                             >
                               <Trash2 className="size-3.5" />

@@ -39,6 +39,10 @@ export class AppError extends Error {
     return new AppError(409, code, message);
   }
 
+  static tooManyRequests(message = 'Too many requests. Please try again later.') {
+    return new AppError(429, ErrorCode.TOO_MANY_REQUESTS, message);
+  }
+
   static internal(message = 'An unexpected error occurred.') {
     return new AppError(500, ErrorCode.INTERNAL_SERVER_ERROR, message);
   }

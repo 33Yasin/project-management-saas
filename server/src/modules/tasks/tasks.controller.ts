@@ -49,7 +49,7 @@ export class TasksController {
   async update(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const taskId = getParam(req.params.taskId);
-      const workspaceId = (req.task as any).project.workspaceId;
+      const workspaceId = req.task!.project.workspaceId;
       const task = await tasksService.updateTask({
         taskId,
         workspaceId,

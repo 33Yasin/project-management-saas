@@ -283,6 +283,7 @@ export default function ProjectTasksPage() {
               size="icon"
               onClick={() => setOrder(order === 'asc' ? 'desc' : 'asc')}
               title={`Sorting ${order.toUpperCase()}`}
+              aria-label={`Toggle sort order, currently ${order.toUpperCase()}`}
               className="h-9 w-9 shrink-0 cursor-pointer"
             >
               <ArrowUpDown className="size-3.5" />

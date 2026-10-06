@@ -35,11 +35,18 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
       <div
         className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity animate-in fade-in-0"
         onClick={() => onOpenChange(false)}
+        aria-hidden="true"
       />
       {/* Content */}
-      <div className="relative z-50 w-full max-w-lg p-6 bg-background rounded-xl border border-border shadow-lg animate-in fade-in-0 zoom-in-95 mx-4 max-h-[90vh] overflow-y-auto">
+      <div
+        role="dialog"
+        aria-modal="true"
+        className="relative z-50 w-full max-w-lg p-6 bg-background rounded-xl border border-border shadow-lg animate-in fade-in-0 zoom-in-95 mx-4 max-h-[90vh] overflow-y-auto"
+      >
         <button
+          type="button"
           onClick={() => onOpenChange(false)}
+          aria-label="Close dialog"
           className="absolute top-4 right-4 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
         >
           <X className="size-4" />
