@@ -6,8 +6,8 @@
     "build:server": "npm run build --prefix server",
     "build:client": "npm run build --prefix client",
     "build": "npm run build --prefix client && npm run build --prefix server",
-    "prisma:generate": "npx --prefix server prisma generate --schema server/prisma/schema.prisma",
-    "prisma:migrate:deploy": "npx --prefix server prisma migrate deploy --schema server/prisma/schema.prisma",
+    "prisma:generate": "npm --prefix server run prisma:generate",
+    "prisma:migrate:deploy": "npm --prefix server run prisma:migrate:deploy",
     "start": "node server/dist/server.js",
     "test": "npm test --prefix server"
   }
