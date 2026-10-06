@@ -107,7 +107,7 @@ export default function InvitationPage() {
           </div>
           <CardTitle className="text-2xl font-bold">You've been invited!</CardTitle>
           <CardDescription>
-            Join <span className="font-semibold text-foreground">{invitation.workspace.name}</span> on Praxis
+            Join <span className="font-semibold text-foreground">{invitation.workspace.name}</span> on Agora
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

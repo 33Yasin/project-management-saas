@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: praxis-pm
+    name: agora-pm
     env: node
     plan: free
     buildCommand: npm run install:all && npx --prefix server prisma generate && npm run prisma:migrate:deploy && npm run build

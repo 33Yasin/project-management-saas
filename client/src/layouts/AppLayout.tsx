@@ -127,7 +127,7 @@ export default function AppLayout() {
             <div className="size-7 rounded-lg bg-primary text-primary-foreground flex items-center justify-center">
               <LayoutDashboard className="size-4" />
             </div>
-            <span>Praxis</span>
+            <span>Agora</span>
           </Link>
         </div>
 
