@@ -10,6 +10,7 @@ import { useAuth } from '@/features/auth/use-auth';
 import { useWorkspaces, useWorkspace } from '@/features/workspaces/use-workspaces';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { ThemeToggle } from '@/components/common/ThemeToggle';
 import {
   Dialog,
   DialogHeader,
@@ -275,6 +276,7 @@ export default function AppLayout() {
                 {activeWorkspace.role}
               </Badge>
             )}
+            <ThemeToggle />
           </div>
         </header>
 

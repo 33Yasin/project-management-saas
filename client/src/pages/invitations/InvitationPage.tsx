@@ -5,6 +5,7 @@ import { apiFetch, ApiError } from '@/lib/api/api-fetch';
 import type { InvitationPreview, WorkspaceMember } from '@/types/api';
 import { useAuth } from '@/features/auth/use-auth';
 import { Button, buttonVariants } from '@/components/ui/button';
+import { ThemeToggle } from '@/components/common/ThemeToggle';
 import { cn } from '@/lib/utils';
 import {
   Card,
@@ -95,7 +96,10 @@ export default function InvitationPage() {
     user && user.email.toLowerCase() === invitation.email.toLowerCase();
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/40 p-4">
+    <div className="min-h-screen relative flex items-center justify-center bg-muted/40 p-4">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
       <Card className="w-full max-w-md shadow-md border-border/80">
         <CardHeader className="text-center">
           <div className="size-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto mb-3">
