@@ -73,7 +73,9 @@ export function useAuth() {
     },
     onSuccess: () => {
       queryClient.setQueryData(['auth', 'me'], null);
-      queryClient.clear();
+      queryClient.removeQueries({
+        predicate: (query) => query.queryKey[0] !== 'auth',
+      });
     },
   });
 
