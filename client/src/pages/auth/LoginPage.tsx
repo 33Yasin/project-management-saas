@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
@@ -23,7 +23,8 @@ const loginSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 });
 
-type LoginFormValues = z.infer<typeof loginSchema>;
+type LoginFormInput = z.input<typeof loginSchema>;
+type LoginFormOutput = z.output<typeof loginSchema>;
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -37,7 +38,7 @@ export default function LoginPage() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginFormValues>({
+  } = useForm<LoginFormInput, unknown, LoginFormOutput>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       email: '',
@@ -45,10 +46,13 @@ export default function LoginPage() {
     },
   });
 
-  const onSubmit = async (values: LoginFormValues) => {
+  const onSubmit: SubmitHandler<LoginFormOutput> = async (values) => {
     try {
       setServerError(null);
-      await login(values);
+      await login({
+        email: values.email,
+        password: values.password,
+      });
       navigate(from, { replace: true });
     } catch (err) {
       if (err instanceof ApiError) {

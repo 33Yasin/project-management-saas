@@ -2,6 +2,17 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch, ApiError } from '@/lib/api/api-fetch';
 import type { User } from '@/types/api';
 
+export interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+export interface RegisterCredentials {
+  name: string;
+  email: string;
+  password: string;
+}
+
 export function useAuth() {
   const queryClient = useQueryClient();
 
@@ -29,7 +40,7 @@ export function useAuth() {
   });
 
   const loginMutation = useMutation({
-    mutationFn: async (credentials: { email: string; password: string }) => {
+    mutationFn: async (credentials: LoginCredentials) => {
       const res = await apiFetch<{ user: User }>('/api/auth/login', {
         method: 'POST',
         body: credentials,
@@ -43,7 +54,7 @@ export function useAuth() {
   });
 
   const registerMutation = useMutation({
-    mutationFn: async (data: { name: string; email: string; password: string }) => {
+    mutationFn: async (data: RegisterCredentials) => {
       const res = await apiFetch<{ user: User }>('/api/auth/register', {
         method: 'POST',
         body: data,

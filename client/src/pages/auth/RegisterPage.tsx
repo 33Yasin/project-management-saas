@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link, useNavigate } from 'react-router-dom';
@@ -28,7 +28,8 @@ const registerSchema = z.object({
     .regex(/[0-9]/, 'Password must contain at least one number'),
 });
 
-type RegisterFormValues = z.infer<typeof registerSchema>;
+type RegisterFormInput = z.input<typeof registerSchema>;
+type RegisterFormOutput = z.output<typeof registerSchema>;
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -39,7 +40,7 @@ export default function RegisterPage() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<RegisterFormValues>({
+  } = useForm<RegisterFormInput, unknown, RegisterFormOutput>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
       name: '',
@@ -48,10 +49,14 @@ export default function RegisterPage() {
     },
   });
 
-  const onSubmit = async (values: RegisterFormValues) => {
+  const onSubmit: SubmitHandler<RegisterFormOutput> = async (values) => {
     try {
       setServerError(null);
-      await registerUser(values);
+      await registerUser({
+        name: values.name,
+        email: values.email,
+        password: values.password,
+      });
       navigate('/workspaces', { replace: true });
     } catch (err) {
       if (err instanceof ApiError) {
