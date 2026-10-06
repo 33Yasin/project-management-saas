@@ -1,0 +1,14 @@
+{
+  "name": "project-management-saas",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install --prefix server && npm install --prefix client",
+    "build:server": "npm run build --prefix server",
+    "build:client": "npm run build --prefix client",
+    "build": "npm run build --prefix client && npm run build --prefix server",
+    "prisma:generate": "npx --prefix server prisma generate",
+    "prisma:migrate:deploy": "npx --prefix server prisma migrate deploy",
+    "start": "node server/dist/server.js",
+    "test": "npm test --prefix server"
+  }
+}
