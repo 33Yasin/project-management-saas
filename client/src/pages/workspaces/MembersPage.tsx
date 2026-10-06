@@ -25,7 +25,9 @@ import {
   Trash2,
   Copy,
   Check,
+  AlertTriangle,
 } from 'lucide-react';
+import type { WorkspaceMember } from '@/types/api';
 
 export default function MembersPage() {
   const { workspaceId } = useParams<{ workspaceId: string }>();
@@ -36,6 +38,7 @@ export default function MembersPage() {
     isLoading: isMembersLoading,
     updateRole,
     removeMember,
+    isRemovingMember,
   } = useWorkspaceMembers(workspaceId);
   const {
     invitations,
@@ -50,6 +53,9 @@ export default function MembersPage() {
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [createdInviteLink, setCreatedInviteLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+
+  const [memberToRemove, setMemberToRemove] = useState<WorkspaceMember | null>(null);
+  const [removeError, setRemoveError] = useState<string | null>(null);
 
   const canManageMembers =
     workspace?.role === 'OWNER' || workspace?.role === 'ADMIN';
@@ -174,9 +180,8 @@ export default function MembersPage() {
                               <button
                                 type="button"
                                 onClick={() => {
-                                  if (confirm(`Remove ${m.user.name} from this workspace?`)) {
-                                    removeMember(m.id);
-                                  }
+                                  setRemoveError(null);
+                                  setMemberToRemove(m);
                                 }}
                                 title="Remove member"
                                 aria-label={`Remove member ${m.user.name}`}
@@ -345,6 +350,71 @@ export default function MembersPage() {
             </DialogFooter>
           </form>
         )}
+      </Dialog>
+
+      {/* Remove Member Confirmation Dialog */}
+      <Dialog
+        open={!!memberToRemove}
+        onOpenChange={(open) => {
+          if (!open) {
+            setMemberToRemove(null);
+            setRemoveError(null);
+          }
+        }}
+      >
+        <DialogHeader>
+          <div className="size-10 rounded-full bg-destructive/10 text-destructive flex items-center justify-center mb-2">
+            <AlertTriangle className="size-5" />
+          </div>
+          <DialogTitle className="text-destructive">Remove Team Member</DialogTitle>
+          <DialogDescription>
+            Are you sure you want to remove <span className="font-semibold text-foreground">{memberToRemove?.user.name}</span> ({memberToRemove?.user.email}) from <span className="font-semibold text-foreground">{workspace?.name}</span>?
+          </DialogDescription>
+        </DialogHeader>
+
+        {removeError && (
+          <div className="p-2.5 text-xs rounded-md bg-destructive/15 text-destructive border border-destructive/20 my-2">
+            {removeError}
+          </div>
+        )}
+
+        <p className="text-xs text-muted-foreground py-2">
+          This user will immediately lose access to all projects, tasks, and discussions within this workspace.
+        </p>
+
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              setMemberToRemove(null);
+              setRemoveError(null);
+            }}
+            disabled={isRemovingMember}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={async () => {
+              if (!memberToRemove) return;
+              try {
+                setRemoveError(null);
+                await removeMember(memberToRemove.id);
+                setMemberToRemove(null);
+              } catch (err) {
+                setRemoveError(
+                  err instanceof Error ? err.message : 'Failed to remove member'
+                );
+              }
+            }}
+            disabled={isRemovingMember}
+            className="cursor-pointer"
+          >
+            {isRemovingMember ? 'Removing...' : 'Remove Member'}
+          </Button>
+        </DialogFooter>
       </Dialog>
     </div>
   );
