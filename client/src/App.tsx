@@ -68,7 +68,7 @@ function TaskRedirect() {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="system" storageKey="teamhub-theme">
+      <ThemeProvider defaultTheme="system" storageKey="praxis-theme">
         <BrowserRouter>
           <Routes>
             {/* Public Routes */}
