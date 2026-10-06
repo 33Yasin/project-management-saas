@@ -18,6 +18,8 @@ interface RequestOptions extends Omit<RequestInit, 'body'> {
   body?: unknown;
 }
 
+const API_BASE_URL = (import.meta.env.VITE_API_URL as string | undefined) || '';
+
 export async function apiFetch<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
   const { body, headers, ...rest } = options;
 
@@ -34,7 +36,8 @@ export async function apiFetch<T>(endpoint: string, options: RequestOptions = {}
     config.body = JSON.stringify(body);
   }
 
-  const response = await fetch(endpoint, config);
+  const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
+  const response = await fetch(url, config);
 
   if (response.status === 204) {
     return {} as T;
