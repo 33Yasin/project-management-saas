@@ -29,7 +29,7 @@ type LoginFormOutput = z.output<typeof loginSchema>;
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, isLoggingIn } = useAuth();
+  const { login, isLoggingIn } = useAuth({ enabled: false });
   const [serverError, setServerError] = useState<string | null>(null);
 
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/workspaces';

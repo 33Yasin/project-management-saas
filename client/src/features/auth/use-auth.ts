@@ -13,7 +13,11 @@ export interface RegisterCredentials {
   password: string;
 }
 
-export function useAuth() {
+export interface UseAuthOptions {
+  enabled?: boolean;
+}
+
+export function useAuth(options?: UseAuthOptions) {
   const queryClient = useQueryClient();
 
   const {
@@ -35,6 +39,7 @@ export function useAuth() {
         throw err;
       }
     },
+    enabled: options?.enabled ?? true,
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: false,
   });

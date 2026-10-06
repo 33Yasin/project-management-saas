@@ -33,7 +33,7 @@ type RegisterFormOutput = z.output<typeof registerSchema>;
 
 export default function RegisterPage() {
   const navigate = useNavigate();
-  const { register: registerUser, isRegistering } = useAuth();
+  const { register: registerUser, isRegistering } = useAuth({ enabled: false });
   const [serverError, setServerError] = useState<string | null>(null);
 
   const {
