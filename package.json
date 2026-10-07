@@ -9,6 +9,9 @@
     "prisma:generate": "npm --prefix server run prisma:generate",
     "prisma:migrate:deploy": "npm --prefix server run prisma:migrate:deploy",
     "start": "node server/dist/server.js",
-    "test": "npm test --prefix server"
+    "test:server": "npm test --prefix server",
+    "test:client": "npm test --prefix client",
+    "test": "npm test --prefix server",
+    "test:all": "npm run test:server && npm run test:client"
   }
 }
