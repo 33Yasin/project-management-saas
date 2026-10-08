@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { Buffer } from 'node:buffer';
 
 test.describe('Journey 4: Task Attachments Upload & Download', () => {
   test('uploads an attachment to a task, verifies visibility, and confirms download access', async ({ page }) => {
