@@ -85,6 +85,7 @@ export interface Task {
   description: string | null;
   status: TaskStatus;
   priority: TaskPriority;
+  position: number;
   assigneeId: string | null;
   createdById: string;
   dueDate: string | null;

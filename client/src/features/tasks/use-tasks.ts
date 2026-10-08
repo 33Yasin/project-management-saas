@@ -64,6 +64,63 @@ export function useProjectTasks(projectId?: string, filters: TaskFilters = {}) {
     },
   });
 
+  const moveTaskMutation = useMutation({
+    mutationFn: async (params: {
+      taskId: string;
+      targetIndex: number;
+      status?: TaskStatus;
+    }) => {
+      const res = await apiFetch<{ task: Task }>(`/api/tasks/${params.taskId}/move`, {
+        method: 'PATCH',
+        body: {
+          targetIndex: params.targetIndex,
+          ...(params.status ? { status: params.status } : {}),
+        },
+      });
+      return res.task;
+    },
+    onMutate: async (newMove) => {
+      await queryClient.cancelQueries({ queryKey: ['tasks', projectId] });
+      const previousData = queryClient.getQueryData<PaginatedResponse<Task>>(['tasks', projectId, filters]);
+
+      if (previousData) {
+        const previousItems = [...previousData.items];
+        const taskIndex = previousItems.findIndex((t) => t.id === newMove.taskId);
+        if (taskIndex !== -1) {
+          const movingTask = { ...previousItems[taskIndex] };
+          const targetStatus = newMove.status || movingTask.status;
+          movingTask.status = targetStatus;
+
+          const remaining = previousItems.filter((t) => t.id !== newMove.taskId);
+          const targetStatusTasks = remaining.filter((t) => t.status === targetStatus);
+          const otherStatusTasks = remaining.filter((t) => t.status !== targetStatus);
+
+          const clampedIndex = Math.min(Math.max(0, newMove.targetIndex), targetStatusTasks.length);
+          targetStatusTasks.splice(clampedIndex, 0, movingTask);
+
+          targetStatusTasks.forEach((t, idx) => {
+            t.position = idx;
+          });
+
+          queryClient.setQueryData<PaginatedResponse<Task>>(['tasks', projectId, filters], {
+            ...previousData,
+            items: [...otherStatusTasks, ...targetStatusTasks],
+          });
+        }
+      }
+
+      return { previousData };
+    },
+    onError: (_err, _newMove, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(['tasks', projectId, filters], context.previousData);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks', projectId] });
+    },
+  });
+
   return {
     tasks: data?.items || [],
     pagination: data?.pagination || { page: 1, limit: 20, totalItems: 0, totalPages: 0 },
@@ -72,6 +129,8 @@ export function useProjectTasks(projectId?: string, filters: TaskFilters = {}) {
     error,
     createTask: createTaskMutation.mutateAsync,
     isCreating: createTaskMutation.isPending,
+    moveTask: moveTaskMutation.mutateAsync,
+    isMoving: moveTaskMutation.isPending,
   };
 }
 

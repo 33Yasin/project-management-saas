@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { useProject } from '@/features/projects/use-projects';
 import { useProjectTasks } from '@/features/tasks/use-tasks';
 import { useWorkspaceMembers } from '@/features/workspaces/use-workspaces';
+import { KanbanBoard } from '@/features/tasks/KanbanBoard';
 import type { TaskStatus, TaskPriority } from '@/types/api';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -31,6 +32,8 @@ import {
   AlertCircle,
   FolderKanban,
   Edit2,
+  LayoutList,
+  Kanban,
 } from 'lucide-react';
 
 export default function ProjectTasksPage() {
@@ -38,6 +41,9 @@ export default function ProjectTasksPage() {
   const { project, updateProject } = useProject(projectId);
   const currentWorkspaceId = paramWsId || project?.workspaceId;
   const { members } = useWorkspaceMembers(currentWorkspaceId);
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const viewMode = searchParams.get('view') === 'board' ? 'board' : 'list';
 
   // Filters state
   const [search, setSearch] = useState('');
@@ -54,15 +60,16 @@ export default function ProjectTasksPage() {
     isLoading: isTasksLoading,
     createTask,
     isCreating,
+    moveTask,
   } = useProjectTasks(projectId, {
     search: search.trim() || undefined,
-    status: status || undefined,
+    status: viewMode === 'board' ? undefined : (status || undefined),
     priority: priority || undefined,
     assigneeId: assigneeId || undefined,
-    sort,
-    order,
-    page,
-    limit: 15,
+    sort: viewMode === 'board' ? 'position' : sort,
+    order: viewMode === 'board' ? 'asc' : order,
+    page: viewMode === 'board' ? 1 : page,
+    limit: viewMode === 'board' ? 100 : 15,
   });
 
   // Create Task State
@@ -186,17 +193,49 @@ export default function ProjectTasksPage() {
             <p className="text-sm text-muted-foreground mt-0.5">{project.description}</p>
           )}
         </div>
-        <Button onClick={() => setCreateOpen(true)} className="cursor-pointer shrink-0">
-          <Plus className="size-4 mr-1.5" />
-          New Task
-        </Button>
+        <div className="flex items-center gap-2.5 shrink-0">
+          <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-lg border border-border">
+            <Button
+              type="button"
+              variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => {
+                const next = new URLSearchParams(searchParams);
+                next.set('view', 'list');
+                setSearchParams(next);
+              }}
+              className="h-8 px-2.5 text-xs font-medium cursor-pointer"
+            >
+              <LayoutList className="size-3.5 mr-1.5" />
+              List
+            </Button>
+            <Button
+              type="button"
+              variant={viewMode === 'board' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => {
+                const next = new URLSearchParams(searchParams);
+                next.set('view', 'board');
+                setSearchParams(next);
+              }}
+              className="h-8 px-2.5 text-xs font-medium cursor-pointer"
+            >
+              <Kanban className="size-3.5 mr-1.5" />
+              Board
+            </Button>
+          </div>
+          <Button onClick={() => setCreateOpen(true)} className="cursor-pointer">
+            <Plus className="size-4 mr-1.5" />
+            New Task
+          </Button>
+        </div>
       </div>
 
       {/* Filter Toolbar */}
       <Card className="p-3 bg-card/60">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2.5">
           {/* Search */}
-          <div className="relative lg:col-span-2">
+          <div className={viewMode === 'board' ? 'relative lg:col-span-2' : 'relative lg:col-span-2'}>
             <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
             <Input
               placeholder="Search tasks..."
@@ -209,25 +248,27 @@ export default function ProjectTasksPage() {
             />
           </div>
 
-          {/* Status Filter */}
-          <div>
-            <Select
-              value={status}
-              onChange={(e) => {
-                setStatus(e.target.value as TaskStatus | '');
-                setPage(1);
-              }}
-              className="h-9 text-xs"
-            >
-              <option value="">All Statuses</option>
-              <option value="TODO">To Do</option>
-              <option value="IN_PROGRESS">In Progress</option>
-              <option value="DONE">Done</option>
-            </Select>
-          </div>
+          {/* Status Filter (List View Only) */}
+          {viewMode === 'list' && (
+            <div>
+              <Select
+                value={status}
+                onChange={(e) => {
+                  setStatus(e.target.value as TaskStatus | '');
+                  setPage(1);
+                }}
+                className="h-9 text-xs"
+              >
+                <option value="">All Statuses</option>
+                <option value="TODO">To Do</option>
+                <option value="IN_PROGRESS">In Progress</option>
+                <option value="DONE">Done</option>
+              </Select>
+            </div>
+          )}
 
           {/* Priority Filter */}
-          <div>
+          <div className={viewMode === 'board' ? 'lg:col-span-2' : ''}>
             <Select
               value={priority}
               onChange={(e) => {
@@ -244,7 +285,7 @@ export default function ProjectTasksPage() {
           </div>
 
           {/* Assignee Filter */}
-          <div>
+          <div className={viewMode === 'board' ? 'lg:col-span-2' : ''}>
             <Select
               value={assigneeId}
               onChange={(e) => {
@@ -262,146 +303,167 @@ export default function ProjectTasksPage() {
             </Select>
           </div>
 
-          {/* Sort & Order */}
-          <div className="flex items-center gap-1">
-            <Select
-              value={sort}
-              onChange={(e) => {
-                setSort(e.target.value);
-                setPage(1);
-              }}
-              className="h-9 text-xs flex-1"
-            >
-              <option value="createdAt">Created</option>
-              <option value="dueDate">Due Date</option>
-              <option value="priority">Priority</option>
-              <option value="status">Status</option>
-              <option value="title">Title</option>
-            </Select>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setOrder(order === 'asc' ? 'desc' : 'asc')}
-              title={`Sorting ${order.toUpperCase()}`}
-              aria-label={`Toggle sort order, currently ${order.toUpperCase()}`}
-              className="h-9 w-9 shrink-0 cursor-pointer"
-            >
-              <ArrowUpDown className="size-3.5" />
-            </Button>
-          </div>
+          {/* Sort & Order (List View Only) */}
+          {viewMode === 'list' && (
+            <div className="flex items-center gap-1">
+              <Select
+                value={sort}
+                onChange={(e) => {
+                  setSort(e.target.value);
+                  setPage(1);
+                }}
+                className="h-9 text-xs flex-1"
+              >
+                <option value="createdAt">Created</option>
+                <option value="dueDate">Due Date</option>
+                <option value="priority">Priority</option>
+                <option value="status">Status</option>
+                <option value="title">Title</option>
+              </Select>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setOrder(order === 'asc' ? 'desc' : 'asc')}
+                title={`Sorting ${order.toUpperCase()}`}
+                aria-label={`Toggle sort order, currently ${order.toUpperCase()}`}
+                className="h-9 w-9 shrink-0 cursor-pointer"
+              >
+                <ArrowUpDown className="size-3.5" />
+              </Button>
+            </div>
+          )}
         </div>
       </Card>
 
-      {/* Tasks Table */}
-      <Card>
-        <CardContent className="p-0">
-          {isTasksLoading ? (
-            <div className="p-12 text-center text-sm text-muted-foreground">
-              Loading tasks...
-            </div>
-          ) : tasks.length === 0 ? (
-            <div className="p-12 text-center">
-              <p className="font-medium text-base mb-1">No tasks match your filters</p>
-              <p className="text-sm text-muted-foreground mb-4">
-                {search || status || priority || assigneeId
-                  ? 'Try adjusting or clearing your search filters.'
-                  : 'Start making progress by creating the first task in this project.'}
-              </p>
-              <Button onClick={() => setCreateOpen(true)} className="cursor-pointer">
-                <Plus className="size-4 mr-1.5" />
-                Add New Task
-              </Button>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
-                <thead className="text-xs text-muted-foreground uppercase bg-muted/30 border-b border-border">
-                  <tr>
-                    <th className="px-4 py-3">Task</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3">Priority</th>
-                    <th className="px-4 py-3">Assignee</th>
-                    <th className="px-4 py-3">Due Date</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {tasks.map((task) => (
-                    <tr
-                      key={task.id}
-                      className="hover:bg-muted/30 transition-colors group cursor-pointer"
-                    >
-                      <td className="px-4 py-3.5 font-medium">
-                        <Link
-                          to={`/workspaces/${currentWorkspaceId}/projects/${projectId}/tasks/${task.id}`}
-                          className="flex items-center gap-2 text-foreground group-hover:text-primary transition-colors"
-                        >
-                          <span className="font-medium">{task.title}</span>
-                          {(task._count?.comments || 0) > 0 && (
-                            <span className="inline-flex items-center gap-0.5 text-xs text-muted-foreground font-normal">
-                              <MessageSquare className="size-3" />
-                              {task._count?.comments}
-                            </span>
-                          )}
-                        </Link>
-                      </td>
-                      <td className="px-4 py-3.5">{getStatusBadge(task.status)}</td>
-                      <td className="px-4 py-3.5">{getPriorityBadge(task.priority)}</td>
-                      <td className="px-4 py-3.5 text-muted-foreground text-xs">
-                        {task.assignee ? (
-                          <span className="font-medium text-foreground">
-                            {task.assignee.name}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground/60 italic">Unassigned</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3.5 text-muted-foreground text-xs">
-                        {task.dueDate ? (
-                          <span className="flex items-center gap-1">
-                            <Calendar className="size-3.5" />
-                            {new Date(task.dueDate).toLocaleDateString()}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground/60">—</span>
-                        )}
-                      </td>
+      {/* Main View: Board vs List */}
+      {viewMode === 'board' ? (
+        isTasksLoading ? (
+          <div className="p-12 text-center text-sm text-muted-foreground bg-card rounded-xl border border-border">
+            Loading Kanban board...
+          </div>
+        ) : (
+          <KanbanBoard
+            tasks={tasks}
+            workspaceId={currentWorkspaceId}
+            projectId={projectId}
+            onMoveTask={moveTask}
+            onAddTask={(colStatus) => {
+              setNewStatus(colStatus);
+              setCreateOpen(true);
+            }}
+          />
+        )
+      ) : (
+        <Card>
+          <CardContent className="p-0">
+            {isTasksLoading ? (
+              <div className="p-12 text-center text-sm text-muted-foreground">
+                Loading tasks...
+              </div>
+            ) : tasks.length === 0 ? (
+              <div className="p-12 text-center">
+                <p className="font-medium text-base mb-1">No tasks match your filters</p>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {search || status || priority || assigneeId
+                    ? 'Try adjusting or clearing your search filters.'
+                    : 'Start making progress by creating the first task in this project.'}
+                </p>
+                <Button onClick={() => setCreateOpen(true)} className="cursor-pointer">
+                  <Plus className="size-4 mr-1.5" />
+                  Add New Task
+                </Button>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left">
+                  <thead className="text-xs text-muted-foreground uppercase bg-muted/30 border-b border-border">
+                    <tr>
+                      <th className="px-4 py-3">Task</th>
+                      <th className="px-4 py-3">Status</th>
+                      <th className="px-4 py-3">Priority</th>
+                      <th className="px-4 py-3">Assignee</th>
+                      <th className="px-4 py-3">Due Date</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {tasks.map((task) => (
+                      <tr
+                        key={task.id}
+                        className="hover:bg-muted/30 transition-colors group cursor-pointer"
+                      >
+                        <td className="px-4 py-3.5 font-medium">
+                          <Link
+                            to={`/workspaces/${currentWorkspaceId}/projects/${projectId}/tasks/${task.id}`}
+                            className="flex items-center gap-2 text-foreground group-hover:text-primary transition-colors"
+                          >
+                            <span className="font-medium">{task.title}</span>
+                            {(task._count?.comments || 0) > 0 && (
+                              <span className="inline-flex items-center gap-0.5 text-xs text-muted-foreground font-normal">
+                                <MessageSquare className="size-3" />
+                                {task._count?.comments}
+                              </span>
+                            )}
+                          </Link>
+                        </td>
+                        <td className="px-4 py-3.5">{getStatusBadge(task.status)}</td>
+                        <td className="px-4 py-3.5">{getPriorityBadge(task.priority)}</td>
+                        <td className="px-4 py-3.5 text-muted-foreground text-xs">
+                          {task.assignee ? (
+                            <span className="font-medium text-foreground">
+                              {task.assignee.name}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground/60 italic">Unassigned</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3.5 text-muted-foreground text-xs">
+                          {task.dueDate ? (
+                            <span className="flex items-center gap-1">
+                              <Calendar className="size-3.5" />
+                              {new Date(task.dueDate).toLocaleDateString()}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground/60">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
 
-          {/* Pagination Controls */}
-          {pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between px-4 py-3 border-t border-border text-xs text-muted-foreground">
-              <div>
-                Page {pagination.page} of {pagination.totalPages} ({pagination.totalItems} total tasks)
+            {/* Pagination Controls */}
+            {pagination.totalPages > 1 && (
+              <div className="flex items-center justify-between px-4 py-3 border-t border-border text-xs text-muted-foreground">
+                <div>
+                  Page {pagination.page} of {pagination.totalPages} ({pagination.totalItems} total tasks)
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={pagination.page <= 1}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    className="cursor-pointer h-7 px-2"
+                  >
+                    <ChevronLeft className="size-3.5 mr-1" /> Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={pagination.page >= pagination.totalPages}
+                    onClick={() => setPage((p) => p + 1)}
+                    className="cursor-pointer h-7 px-2"
+                  >
+                    Next <ChevronRight className="size-3.5 ml-1" />
+                  </Button>
+                </div>
               </div>
-              <div className="flex items-center gap-1.5">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={pagination.page <= 1}
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  className="cursor-pointer h-7 px-2"
-                >
-                  <ChevronLeft className="size-3.5 mr-1" /> Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={pagination.page >= pagination.totalPages}
-                  onClick={() => setPage((p) => p + 1)}
-                  className="cursor-pointer h-7 px-2"
-                >
-                  Next <ChevronRight className="size-3.5 ml-1" />
-                </Button>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Create Task Dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
