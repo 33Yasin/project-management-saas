@@ -172,6 +172,11 @@ export const en = {
     postComment: 'Post Comment',
     posting: 'Posting...',
     deleteComment: 'Delete comment',
+    attachFiles: 'Attach files',
+    attachFilesDesc: 'or drag and drop files here (max 10MB each)',
+    selectedFiles: 'Attached files ({count})',
+    removeFile: 'Remove file',
+    uploadingAttachments: 'Uploading attachments...',
   },
   kanban: {
     toDo: 'To Do',

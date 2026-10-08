@@ -174,6 +174,11 @@ export const tr: Translations = {
     postComment: 'Yorum Yap',
     posting: 'Gönderiliyor...',
     deleteComment: 'Yorumu sil',
+    attachFiles: 'Dosya ekle',
+    attachFilesDesc: 'veya dosyaları buraya sürükleyin (her biri maks 10MB)',
+    selectedFiles: 'Eklenen dosyalar ({count})',
+    removeFile: 'Dosyayı kaldır',
+    uploadingAttachments: 'Ekler yükleniyor...',
   },
   kanban: {
     toDo: 'Yapılacak',

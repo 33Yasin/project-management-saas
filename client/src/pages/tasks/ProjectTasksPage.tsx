@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { useProject } from '@/features/projects/use-projects';
 import { useProjectTasks } from '@/features/tasks/use-tasks';
 import { useWorkspaceMembers } from '@/features/workspaces/use-workspaces';
 import { useLanguage } from '@/lib/i18n/language-context';
+import { apiFetch } from '@/lib/api/api-fetch';
+import { cn } from '@/lib/utils';
 import { KanbanBoard } from '@/features/tasks/KanbanBoard';
 import type { TaskStatus, TaskPriority } from '@/types/api';
 import { Button } from '@/components/ui/button';
@@ -35,6 +37,8 @@ import {
   Edit2,
   LayoutList,
   Kanban,
+  Paperclip,
+  X,
 } from 'lucide-react';
 
 export default function ProjectTasksPage() {
@@ -84,6 +88,12 @@ export default function ProjectTasksPage() {
   const [newDueDate, setNewDueDate] = useState<string>('');
   const [createError, setCreateError] = useState<string | null>(null);
 
+  // Attachments in Create Task Modal
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [createDragActive, setCreateDragActive] = useState(false);
+  const [isUploadingAttachments, setIsUploadingAttachments] = useState(false);
+
   // Edit Project State
   const [editProjectOpen, setEditProjectOpen] = useState(false);
   const [editName, setEditName] = useState('');
@@ -95,7 +105,7 @@ export default function ProjectTasksPage() {
 
     try {
       setCreateError(null);
-      await createTask({
+      const createdTask = await createTask({
         title: title.trim(),
         description: description.trim() || null,
         status: newStatus,
@@ -104,8 +114,25 @@ export default function ProjectTasksPage() {
         dueDate: newDueDate || null,
       });
 
+      if (selectedFiles.length > 0) {
+        setIsUploadingAttachments(true);
+        for (const file of selectedFiles) {
+          try {
+            const formData = new FormData();
+            formData.append('file', file);
+            await apiFetch(`/api/tasks/${createdTask.id}/attachments`, {
+              method: 'POST',
+              body: formData,
+            });
+          } catch (fileErr) {
+            console.error('Failed to upload task attachment:', fileErr);
+          }
+        }
+      }
+
       setTitle('');
       setDescription('');
+      setSelectedFiles([]);
       setNewStatus('TODO');
       setNewPriority('MEDIUM');
       setNewAssigneeId('');
@@ -113,6 +140,8 @@ export default function ProjectTasksPage() {
       setCreateOpen(false);
     } catch (err) {
       setCreateError(err instanceof Error ? err.message : 'Failed to create task');
+    } finally {
+      setIsUploadingAttachments(false);
     }
   };
 
@@ -472,7 +501,16 @@ export default function ProjectTasksPage() {
       )}
 
       {/* Create Task Dialog */}
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+      <Dialog
+        open={createOpen}
+        onOpenChange={(open) => {
+          setCreateOpen(open);
+          if (!open) {
+            setSelectedFiles([]);
+            setCreateError(null);
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle>{t('tasks.createTaskTitle')}</DialogTitle>
           <DialogDescription>
@@ -493,7 +531,7 @@ export default function ProjectTasksPage() {
                 placeholder={t('tasks.taskTitlePlaceholder')}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                disabled={isCreating}
+                disabled={isCreating || isUploadingAttachments}
                 autoFocus
               />
             </div>
@@ -504,10 +542,94 @@ export default function ProjectTasksPage() {
                 placeholder={t('tasks.taskDescPlaceholder')}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                disabled={isCreating}
+                disabled={isCreating || isUploadingAttachments}
                 rows={3}
               />
             </div>
+
+            {/* Attachments Drop Zone & Selected Files */}
+            <div className="space-y-2">
+              <Label>{t('tasks.attachFiles')}</Label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  if (e.target.files && e.target.files.length > 0) {
+                    const newFiles = Array.from(e.target.files);
+                    setSelectedFiles((prev) => [...prev, ...newFiles]);
+                    e.target.value = '';
+                  }
+                }}
+              />
+              <div
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setCreateDragActive(true);
+                }}
+                onDragLeave={() => setCreateDragActive(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setCreateDragActive(false);
+                  if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                    const dropped = Array.from(e.dataTransfer.files);
+                    setSelectedFiles((prev) => [...prev, ...dropped]);
+                  }
+                }}
+                onClick={() => fileInputRef.current?.click()}
+                className={cn(
+                  'border-2 border-dashed rounded-lg p-3 text-center cursor-pointer transition-colors flex flex-col items-center justify-center gap-1.5',
+                  createDragActive
+                    ? 'border-primary bg-primary/5'
+                    : 'border-muted-foreground/25 hover:border-muted-foreground/50 hover:bg-muted/30'
+                )}
+              >
+                <Paperclip className="size-4 text-muted-foreground" />
+                <div className="text-xs text-muted-foreground">
+                  <span className="font-medium text-foreground underline-offset-4 hover:underline">
+                    {t('tasks.attachFiles')}
+                  </span>{' '}
+                  {t('tasks.attachFilesDesc')}
+                </div>
+              </div>
+
+              {selectedFiles.length > 0 && (
+                <div className="space-y-1.5 pt-1">
+                  <div className="text-xs font-medium text-muted-foreground">
+                    {t('tasks.selectedFiles', { count: selectedFiles.length })}
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
+                    {selectedFiles.map((file, idx) => (
+                      <div
+                        key={`${file.name}-${idx}`}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs bg-muted border border-border max-w-full"
+                      >
+                        <Paperclip className="size-3 text-muted-foreground shrink-0" />
+                        <span className="truncate max-w-[180px]" title={file.name}>
+                          {file.name}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground shrink-0">
+                          ({(file.size / 1024 / 1024).toFixed(1)} MB)
+                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedFiles((prev) => prev.filter((_, i) => i !== idx));
+                          }}
+                          className="hover:text-destructive text-muted-foreground p-0.5 rounded cursor-pointer"
+                          title={t('tasks.removeFile')}
+                        >
+                          <X className="size-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="tStatus">{t('tasks.status')}</Label>
@@ -566,12 +688,19 @@ export default function ProjectTasksPage() {
               type="button"
               variant="outline"
               onClick={() => setCreateOpen(false)}
-              disabled={isCreating}
+              disabled={isCreating || isUploadingAttachments}
             >
               {t('common.cancel')}
             </Button>
-            <Button type="submit" disabled={isCreating || !title.trim()}>
-              {isCreating ? t('tasks.creating') : t('tasks.createTaskBtn')}
+            <Button
+              type="submit"
+              disabled={isCreating || isUploadingAttachments || !title.trim()}
+            >
+              {isUploadingAttachments
+                ? t('tasks.uploadingAttachments')
+                : isCreating
+                ? t('tasks.creating')
+                : t('tasks.createTaskBtn')}
             </Button>
           </DialogFooter>
         </form>
