@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useWorkspaces } from '@/features/workspaces/use-workspaces';
+import { useLanguage } from '@/lib/i18n/language-context';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -18,6 +19,7 @@ import { Building2, Plus, ArrowRight } from 'lucide-react';
 
 export default function WorkspacesPage() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const { workspaces, isLoading, createWorkspace, isCreating } = useWorkspaces();
   const [createWsOpen, setCreateWsOpen] = useState(false);
   const [newWsName, setNewWsName] = useState('');
@@ -41,7 +43,7 @@ export default function WorkspacesPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-12">
-        <p className="text-muted-foreground text-sm">Loading workspaces...</p>
+        <p className="text-muted-foreground text-sm">{t('common.loading')}</p>
       </div>
     );
   }
@@ -50,14 +52,14 @@ export default function WorkspacesPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Workspaces</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t('workspaces.title')}</h1>
           <p className="text-sm text-muted-foreground">
-            Select a workspace to manage its projects, tasks, and team members.
+            {t('workspaces.subtitle')}
           </p>
         </div>
         <Button onClick={() => setCreateWsOpen(true)} className="cursor-pointer">
           <Plus className="size-4 mr-1.5" />
-          Create Workspace
+          {t('workspaces.createWorkspace')}
         </Button>
       </div>
 
@@ -66,13 +68,13 @@ export default function WorkspacesPage() {
           <div className="size-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
             <Building2 className="size-6 text-muted-foreground" />
           </div>
-          <h3 className="font-semibold text-lg mb-1">No workspaces yet</h3>
+          <h3 className="font-semibold text-lg mb-1">{t('workspaces.noWorkspaces')}</h3>
           <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-4">
-            Get started by creating your first workspace to collaborate with your team.
+            {t('workspaces.noWorkspacesDesc')}
           </p>
           <Button onClick={() => setCreateWsOpen(true)} className="cursor-pointer">
             <Plus className="size-4 mr-1.5" />
-            Create Workspace
+            {t('workspaces.createWorkspace')}
           </Button>
         </Card>
       ) : (
@@ -97,7 +99,7 @@ export default function WorkspacesPage() {
                   {ws.name}
                 </CardTitle>
                 <CardDescription>
-                  Created on {new Date(ws.createdAt).toLocaleDateString()}
+                  {t('workspaces.createdOn', { date: new Date(ws.createdAt).toLocaleDateString() })}
                 </CardDescription>
               </CardHeader>
               <CardFooter className="pt-2">
@@ -105,7 +107,7 @@ export default function WorkspacesPage() {
                   to={`/workspaces/${ws.id}/projects`}
                   className={cn(buttonVariants({ variant: 'outline' }), 'w-full justify-between cursor-pointer')}
                 >
-                  <span>Open Workspace</span>
+                  <span>{t('workspaces.openWorkspace')}</span>
                   <ArrowRight className="size-4" />
                 </Link>
               </CardFooter>
@@ -117,9 +119,9 @@ export default function WorkspacesPage() {
       {/* Create Workspace Dialog */}
       <Dialog open={createWsOpen} onOpenChange={setCreateWsOpen}>
         <DialogHeader>
-          <DialogTitle>Create New Workspace</DialogTitle>
+          <DialogTitle>{t('workspaces.createWorkspaceTitle')}</DialogTitle>
           <DialogDescription>
-            Workspaces organize projects, tasks, and team members.
+            {t('workspaces.createWorkspaceDesc')}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleCreateWorkspace}>
@@ -130,10 +132,10 @@ export default function WorkspacesPage() {
               </div>
             )}
             <div className="space-y-1.5">
-              <Label htmlFor="wsName">Workspace Name</Label>
+              <Label htmlFor="wsName">{t('workspaces.workspaceName')}</Label>
               <Input
                 id="wsName"
-                placeholder="e.g. Engineering Team"
+                placeholder={t('workspaces.workspaceNamePlaceholder')}
                 value={newWsName}
                 onChange={(e) => setNewWsName(e.target.value)}
                 disabled={isCreating}
@@ -148,10 +150,10 @@ export default function WorkspacesPage() {
               onClick={() => setCreateWsOpen(false)}
               disabled={isCreating}
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button type="submit" disabled={isCreating || !newWsName.trim()}>
-              {isCreating ? 'Creating...' : 'Create Workspace'}
+              {isCreating ? t('projects.creating') : t('workspaces.createWorkspace')}
             </Button>
           </DialogFooter>
         </form>

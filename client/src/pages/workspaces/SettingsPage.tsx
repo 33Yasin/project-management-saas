@@ -5,6 +5,7 @@ import {
   useWorkspace,
   useWorkspaceMembers,
 } from '@/features/workspaces/use-workspaces';
+import { useLanguage } from '@/lib/i18n/language-context';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -30,6 +31,7 @@ export default function SettingsPage() {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const {
     workspace,
     updateWorkspace,
@@ -69,7 +71,7 @@ export default function SettingsPage() {
     try {
       setNameMessage(null);
       await updateWorkspace({ name: name.trim() });
-      setNameMessage('Workspace name updated successfully.');
+      setNameMessage(t('workspaces.nameUpdated'));
       setTimeout(() => setNameMessage(null), 3000);
     } catch (err) {
       setNameMessage(err instanceof Error ? err.message : 'Failed to update name');
@@ -103,9 +105,9 @@ export default function SettingsPage() {
   return (
     <div className="space-y-8 max-w-3xl">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Workspace Settings</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{t('workspaces.settingsTitle')}</h1>
         <p className="text-sm text-muted-foreground">
-          Manage general workspace settings, ownership, and deletions.
+          {t('workspaces.settingsSubtitle')}
         </p>
       </div>
 
@@ -113,8 +115,8 @@ export default function SettingsPage() {
       <Card>
         <form onSubmit={handleUpdateName}>
           <CardHeader>
-            <CardTitle className="text-lg">General Information</CardTitle>
-            <CardDescription>Update your workspace display name.</CardDescription>
+            <CardTitle className="text-lg">{t('workspaces.generalInfo')}</CardTitle>
+            <CardDescription>{t('workspaces.generalInfoDesc')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {nameMessage && (
@@ -123,7 +125,7 @@ export default function SettingsPage() {
               </div>
             )}
             <div className="space-y-1.5">
-              <Label htmlFor="wsName">Workspace Name</Label>
+              <Label htmlFor="wsName">{t('workspaces.workspaceName')}</Label>
               <Input
                 id="wsName"
                 value={name}
@@ -138,7 +140,7 @@ export default function SettingsPage() {
               disabled={isUpdating || !name.trim() || name === workspace?.name}
               className="cursor-pointer"
             >
-              {isUpdating ? 'Saving...' : 'Save Changes'}
+              {isUpdating ? t('projects.creating') : t('common.save')}
             </Button>
           </CardFooter>
         </form>
@@ -148,25 +150,25 @@ export default function SettingsPage() {
       {isOwner && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Transfer Ownership</CardTitle>
+            <CardTitle className="text-lg">{t('workspaces.transferOwnership')}</CardTitle>
             <CardDescription>
-              Transfer ownership of this workspace to another team member. You will remain an Admin.
+              {t('workspaces.transferOwnershipDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {otherMembers.length === 0 ? (
               <p className="text-xs text-muted-foreground">
-                There are no other members in this workspace to transfer ownership to.
+                {t('workspaces.noOtherMembers')}
               </p>
             ) : (
               <div className="space-y-1.5">
-                <Label htmlFor="targetMember">New Owner</Label>
+                <Label htmlFor="targetMember">{t('workspaces.newOwner')}</Label>
                 <Select
                   id="targetMember"
                   value={targetUserId}
                   onChange={(e) => setTargetUserId(e.target.value)}
                 >
-                  <option value="">Select a member...</option>
+                  <option value="">{t('workspaces.selectMember')}</option>
                   {otherMembers.map((m) => (
                     <option key={m.userId} value={m.userId}>
                       {m.user.name} ({m.user.email}) - {m.role}
@@ -184,7 +186,7 @@ export default function SettingsPage() {
               onClick={() => setTransferOpen(true)}
               className="cursor-pointer"
             >
-              Transfer Ownership
+              {t('workspaces.transferOwnership')}
             </Button>
           </CardFooter>
         </Card>
@@ -194,9 +196,9 @@ export default function SettingsPage() {
       {isOwner && (
         <Card className="border-destructive/30">
           <CardHeader>
-            <CardTitle className="text-lg text-destructive">Danger Zone</CardTitle>
+            <CardTitle className="text-lg text-destructive">{t('workspaces.dangerZone')}</CardTitle>
             <CardDescription>
-              Permanently delete this workspace and all associated projects, tasks, comments, and member records.
+              {t('workspaces.dangerZoneDesc')}
             </CardDescription>
           </CardHeader>
           <CardFooter className="justify-end border-t border-destructive/20 pt-4">
@@ -206,7 +208,7 @@ export default function SettingsPage() {
               onClick={() => setDeleteOpen(true)}
               className="cursor-pointer"
             >
-              Delete Workspace
+              {t('workspaces.deleteWorkspace')}
             </Button>
           </CardFooter>
         </Card>
@@ -215,9 +217,9 @@ export default function SettingsPage() {
       {/* Transfer Ownership Dialog */}
       <Dialog open={transferOpen} onOpenChange={setTransferOpen}>
         <DialogHeader>
-          <DialogTitle>Confirm Ownership Transfer</DialogTitle>
+          <DialogTitle>{t('workspaces.transferDialogTitle')}</DialogTitle>
           <DialogDescription>
-            Are you sure you want to transfer ownership of this workspace? You will be demoted to an ADMIN role.
+            {t('workspaces.transferDialogDesc')}
           </DialogDescription>
         </DialogHeader>
         {transferError && (
@@ -232,14 +234,14 @@ export default function SettingsPage() {
             onClick={() => setTransferOpen(false)}
             disabled={isTransferring}
           >
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button
             type="button"
             onClick={handleTransferOwnership}
             disabled={isTransferring}
           >
-            {isTransferring ? 'Transferring...' : 'Confirm Transfer'}
+            {isTransferring ? t('workspaces.transferring') : t('workspaces.confirmTransfer')}
           </Button>
         </DialogFooter>
       </Dialog>
@@ -250,9 +252,9 @@ export default function SettingsPage() {
           <div className="size-10 rounded-full bg-destructive/10 text-destructive flex items-center justify-center mb-2">
             <AlertTriangle className="size-5" />
           </div>
-          <DialogTitle className="text-destructive">Delete Workspace</DialogTitle>
+          <DialogTitle className="text-destructive">{t('workspaces.deleteWorkspace')}</DialogTitle>
           <DialogDescription>
-            This action cannot be undone. All projects, tasks, and comments will be permanently erased.
+            {t('workspaces.deleteWarning')}
           </DialogDescription>
         </DialogHeader>
         {deleteError && (
@@ -267,7 +269,7 @@ export default function SettingsPage() {
             onClick={() => setDeleteOpen(false)}
             disabled={isDeleting}
           >
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button
             type="button"
@@ -275,7 +277,7 @@ export default function SettingsPage() {
             onClick={handleDeleteWorkspace}
             disabled={isDeleting}
           >
-            {isDeleting ? 'Deleting...' : 'Delete Permanently'}
+            {isDeleting ? t('workspaces.deleting') : t('workspaces.deletePermanently')}
           </Button>
         </DialogFooter>
       </Dialog>

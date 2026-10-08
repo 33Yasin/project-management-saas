@@ -3,6 +3,7 @@ import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { useProject } from '@/features/projects/use-projects';
 import { useProjectTasks } from '@/features/tasks/use-tasks';
 import { useWorkspaceMembers } from '@/features/workspaces/use-workspaces';
+import { useLanguage } from '@/lib/i18n/language-context';
 import { KanbanBoard } from '@/features/tasks/KanbanBoard';
 import type { TaskStatus, TaskPriority } from '@/types/api';
 import { Button } from '@/components/ui/button';
@@ -41,6 +42,7 @@ export default function ProjectTasksPage() {
   const { project, updateProject } = useProject(projectId);
   const currentWorkspaceId = paramWsId || project?.workspaceId;
   const { members } = useWorkspaceMembers(currentWorkspaceId);
+  const { t } = useLanguage();
 
   const [searchParams, setSearchParams] = useSearchParams();
   const viewMode = searchParams.get('view') === 'board' ? 'board' : 'list';
@@ -129,20 +131,20 @@ export default function ProjectTasksPage() {
       case 'DONE':
         return (
           <Badge variant="success" className="gap-1">
-            <CheckCircle2 className="size-3" /> Done
+            <CheckCircle2 className="size-3" /> {t('tasks.done')}
           </Badge>
         );
       case 'IN_PROGRESS':
         return (
           <Badge variant="info" className="gap-1">
-            <Clock className="size-3" /> In Progress
+            <Clock className="size-3" /> {t('tasks.inProgress')}
           </Badge>
         );
       case 'TODO':
       default:
         return (
           <Badge variant="outline" className="gap-1">
-            <AlertCircle className="size-3" /> To Do
+            <AlertCircle className="size-3" /> {t('tasks.toDo')}
           </Badge>
         );
     }
@@ -151,12 +153,12 @@ export default function ProjectTasksPage() {
   const getPriorityBadge = (p: TaskPriority) => {
     switch (p) {
       case 'HIGH':
-        return <Badge variant="destructive">High</Badge>;
+        return <Badge variant="destructive">{t('tasks.high')}</Badge>;
       case 'MEDIUM':
-        return <Badge variant="warning">Medium</Badge>;
+        return <Badge variant="warning">{t('tasks.medium')}</Badge>;
       case 'LOW':
       default:
-        return <Badge variant="secondary">Low</Badge>;
+        return <Badge variant="secondary">{t('tasks.low')}</Badge>;
     }
   };
 
@@ -170,7 +172,7 @@ export default function ProjectTasksPage() {
               to={`/workspaces/${currentWorkspaceId}/projects`}
               className="hover:text-foreground flex items-center gap-1"
             >
-              <FolderKanban className="size-3.5" /> Projects
+              <FolderKanban className="size-3.5" /> {t('projects.title')}
             </Link>
             <span>/</span>
             <span className="font-medium text-foreground">{project?.name}</span>
@@ -183,7 +185,7 @@ export default function ProjectTasksPage() {
                 setEditDesc(project?.description || '');
                 setEditProjectOpen(true);
               }}
-              title="Edit project"
+              title={t('projects.editProject')}
               className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
             >
               <Edit2 className="size-3.5" />
@@ -207,7 +209,7 @@ export default function ProjectTasksPage() {
               className="h-8 px-2.5 text-xs font-medium cursor-pointer"
             >
               <LayoutList className="size-3.5 mr-1.5" />
-              List
+              {t('tasks.list')}
             </Button>
             <Button
               type="button"
@@ -221,12 +223,12 @@ export default function ProjectTasksPage() {
               className="h-8 px-2.5 text-xs font-medium cursor-pointer"
             >
               <Kanban className="size-3.5 mr-1.5" />
-              Board
+              {t('tasks.board')}
             </Button>
           </div>
           <Button onClick={() => setCreateOpen(true)} className="cursor-pointer">
             <Plus className="size-4 mr-1.5" />
-            New Task
+            {t('tasks.newTask')}
           </Button>
         </div>
       </div>
@@ -238,7 +240,7 @@ export default function ProjectTasksPage() {
           <div className={viewMode === 'board' ? 'relative lg:col-span-2' : 'relative lg:col-span-2'}>
             <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
             <Input
-              placeholder="Search tasks..."
+              placeholder={t('tasks.searchPlaceholder')}
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -259,10 +261,10 @@ export default function ProjectTasksPage() {
                 }}
                 className="h-9 text-xs"
               >
-                <option value="">All Statuses</option>
-                <option value="TODO">To Do</option>
-                <option value="IN_PROGRESS">In Progress</option>
-                <option value="DONE">Done</option>
+                <option value="">{t('tasks.allStatuses')}</option>
+                <option value="TODO">{t('tasks.toDo')}</option>
+                <option value="IN_PROGRESS">{t('tasks.inProgress')}</option>
+                <option value="DONE">{t('tasks.done')}</option>
               </Select>
             </div>
           )}
@@ -277,10 +279,10 @@ export default function ProjectTasksPage() {
               }}
               className="h-9 text-xs"
             >
-              <option value="">All Priorities</option>
-              <option value="LOW">Low</option>
-              <option value="MEDIUM">Medium</option>
-              <option value="HIGH">High</option>
+              <option value="">{t('tasks.allPriorities')}</option>
+              <option value="LOW">{t('tasks.low')}</option>
+              <option value="MEDIUM">{t('tasks.medium')}</option>
+              <option value="HIGH">{t('tasks.high')}</option>
             </Select>
           </div>
 
@@ -294,7 +296,7 @@ export default function ProjectTasksPage() {
               }}
               className="h-9 text-xs"
             >
-              <option value="">All Assignees</option>
+              <option value="">{t('tasks.allAssignees')}</option>
               {members.map((m) => (
                 <option key={m.userId} value={m.userId}>
                   {m.user.name}
@@ -314,11 +316,11 @@ export default function ProjectTasksPage() {
                 }}
                 className="h-9 text-xs flex-1"
               >
-                <option value="createdAt">Created</option>
-                <option value="dueDate">Due Date</option>
-                <option value="priority">Priority</option>
-                <option value="status">Status</option>
-                <option value="title">Title</option>
+                <option value="createdAt">{t('tasks.sortByCreated')}</option>
+                <option value="dueDate">{t('tasks.sortByDueDate')}</option>
+                <option value="priority">{t('tasks.sortByPriority')}</option>
+                <option value="status">{t('tasks.sortByStatus')}</option>
+                <option value="title">{t('tasks.sortByTitle')}</option>
               </Select>
               <Button
                 variant="outline"
@@ -339,7 +341,7 @@ export default function ProjectTasksPage() {
       {viewMode === 'board' ? (
         isTasksLoading ? (
           <div className="p-12 text-center text-sm text-muted-foreground bg-card rounded-xl border border-border">
-            Loading Kanban board...
+            {t('tasks.loadingBoard')}
           </div>
         ) : (
           <KanbanBoard
@@ -358,19 +360,19 @@ export default function ProjectTasksPage() {
           <CardContent className="p-0">
             {isTasksLoading ? (
               <div className="p-12 text-center text-sm text-muted-foreground">
-                Loading tasks...
+                {t('tasks.loadingTasks')}
               </div>
             ) : tasks.length === 0 ? (
               <div className="p-12 text-center">
-                <p className="font-medium text-base mb-1">No tasks match your filters</p>
+                <p className="font-medium text-base mb-1">{t('tasks.noTasks')}</p>
                 <p className="text-sm text-muted-foreground mb-4">
                   {search || status || priority || assigneeId
-                    ? 'Try adjusting or clearing your search filters.'
-                    : 'Start making progress by creating the first task in this project.'}
+                    ? t('tasks.noTasksAdjust')
+                    : t('tasks.noTasksDesc')}
                 </p>
                 <Button onClick={() => setCreateOpen(true)} className="cursor-pointer">
                   <Plus className="size-4 mr-1.5" />
-                  Add New Task
+                  {t('tasks.newTask')}
                 </Button>
               </div>
             ) : (
@@ -378,11 +380,11 @@ export default function ProjectTasksPage() {
                 <table className="w-full text-sm text-left">
                   <thead className="text-xs text-muted-foreground uppercase bg-muted/30 border-b border-border">
                     <tr>
-                      <th className="px-4 py-3">Task</th>
-                      <th className="px-4 py-3">Status</th>
-                      <th className="px-4 py-3">Priority</th>
-                      <th className="px-4 py-3">Assignee</th>
-                      <th className="px-4 py-3">Due Date</th>
+                      <th className="px-4 py-3">{t('tasks.taskTableTask')}</th>
+                      <th className="px-4 py-3">{t('tasks.taskTableStatus')}</th>
+                      <th className="px-4 py-3">{t('tasks.taskTablePriority')}</th>
+                      <th className="px-4 py-3">{t('tasks.taskTableAssignee')}</th>
+                      <th className="px-4 py-3">{t('tasks.taskTableDueDate')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
@@ -413,7 +415,7 @@ export default function ProjectTasksPage() {
                               {task.assignee.name}
                             </span>
                           ) : (
-                            <span className="text-muted-foreground/60 italic">Unassigned</span>
+                            <span className="text-muted-foreground/60 italic">{t('tasks.unassigned')}</span>
                           )}
                         </td>
                         <td className="px-4 py-3.5 text-muted-foreground text-xs">
@@ -437,7 +439,11 @@ export default function ProjectTasksPage() {
             {pagination.totalPages > 1 && (
               <div className="flex items-center justify-between px-4 py-3 border-t border-border text-xs text-muted-foreground">
                 <div>
-                  Page {pagination.page} of {pagination.totalPages} ({pagination.totalItems} total tasks)
+                  {t('tasks.pageOf', {
+                    page: pagination.page,
+                    totalPages: pagination.totalPages,
+                    totalItems: pagination.totalItems,
+                  })}
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Button
@@ -447,7 +453,7 @@ export default function ProjectTasksPage() {
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     className="cursor-pointer h-7 px-2"
                   >
-                    <ChevronLeft className="size-3.5 mr-1" /> Previous
+                    <ChevronLeft className="size-3.5 mr-1" /> {t('common.previous')}
                   </Button>
                   <Button
                     variant="outline"
@@ -456,7 +462,7 @@ export default function ProjectTasksPage() {
                     onClick={() => setPage((p) => p + 1)}
                     className="cursor-pointer h-7 px-2"
                   >
-                    Next <ChevronRight className="size-3.5 ml-1" />
+                    {t('common.next')} <ChevronRight className="size-3.5 ml-1" />
                   </Button>
                 </div>
               </div>
@@ -468,8 +474,10 @@ export default function ProjectTasksPage() {
       {/* Create Task Dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogHeader>
-          <DialogTitle>Create New Task</DialogTitle>
-          <DialogDescription>Add a task to {project?.name}.</DialogDescription>
+          <DialogTitle>{t('tasks.createTaskTitle')}</DialogTitle>
+          <DialogDescription>
+            {t('tasks.createTaskDesc', { project: project?.name || '' })}
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleCreateTask}>
           <div className="space-y-4 py-2">
@@ -479,10 +487,10 @@ export default function ProjectTasksPage() {
               </div>
             )}
             <div className="space-y-1.5">
-              <Label htmlFor="taskTitle">Title</Label>
+              <Label htmlFor="taskTitle">{t('tasks.taskTitle')}</Label>
               <Input
                 id="taskTitle"
-                placeholder="What needs to be done?"
+                placeholder={t('tasks.taskTitlePlaceholder')}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 disabled={isCreating}
@@ -490,10 +498,10 @@ export default function ProjectTasksPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="taskDesc">Description (optional)</Label>
+              <Label htmlFor="taskDesc">{t('tasks.taskDesc')}</Label>
               <Textarea
                 id="taskDesc"
-                placeholder="Add context, acceptance criteria..."
+                placeholder={t('tasks.taskDescPlaceholder')}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 disabled={isCreating}
@@ -502,39 +510,39 @@ export default function ProjectTasksPage() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label htmlFor="tStatus">Status</Label>
+                <Label htmlFor="tStatus">{t('tasks.status')}</Label>
                 <Select
                   id="tStatus"
                   value={newStatus}
                   onChange={(e) => setNewStatus(e.target.value as TaskStatus)}
                 >
-                  <option value="TODO">To Do</option>
-                  <option value="IN_PROGRESS">In Progress</option>
-                  <option value="DONE">Done</option>
+                  <option value="TODO">{t('tasks.toDo')}</option>
+                  <option value="IN_PROGRESS">{t('tasks.inProgress')}</option>
+                  <option value="DONE">{t('tasks.done')}</option>
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="tPriority">Priority</Label>
+                <Label htmlFor="tPriority">{t('tasks.priority')}</Label>
                 <Select
                   id="tPriority"
                   value={newPriority}
                   onChange={(e) => setNewPriority(e.target.value as TaskPriority)}
                 >
-                  <option value="LOW">Low</option>
-                  <option value="MEDIUM">Medium</option>
-                  <option value="HIGH">High</option>
+                  <option value="LOW">{t('tasks.low')}</option>
+                  <option value="MEDIUM">{t('tasks.medium')}</option>
+                  <option value="HIGH">{t('tasks.high')}</option>
                 </Select>
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label htmlFor="tAssignee">Assignee (optional)</Label>
+                <Label htmlFor="tAssignee">{t('tasks.assignee')}</Label>
                 <Select
                   id="tAssignee"
                   value={newAssigneeId}
                   onChange={(e) => setNewAssigneeId(e.target.value)}
                 >
-                  <option value="">Unassigned</option>
+                  <option value="">{t('tasks.unassigned')}</option>
                   {members.map((m) => (
                     <option key={m.userId} value={m.userId}>
                       {m.user.name} ({m.role})
@@ -543,7 +551,7 @@ export default function ProjectTasksPage() {
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="tDueDate">Due Date (optional)</Label>
+                <Label htmlFor="tDueDate">{t('tasks.dueDate')}</Label>
                 <Input
                   id="tDueDate"
                   type="date"
@@ -560,10 +568,10 @@ export default function ProjectTasksPage() {
               onClick={() => setCreateOpen(false)}
               disabled={isCreating}
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button type="submit" disabled={isCreating || !title.trim()}>
-              {isCreating ? 'Creating...' : 'Create Task'}
+              {isCreating ? t('tasks.creating') : t('tasks.createTaskBtn')}
             </Button>
           </DialogFooter>
         </form>
@@ -572,13 +580,13 @@ export default function ProjectTasksPage() {
       {/* Edit Project Dialog */}
       <Dialog open={editProjectOpen} onOpenChange={setEditProjectOpen}>
         <DialogHeader>
-          <DialogTitle>Edit Project</DialogTitle>
-          <DialogDescription>Update project name and description.</DialogDescription>
+          <DialogTitle>{t('projects.editProjectTitle')}</DialogTitle>
+          <DialogDescription>{t('projects.editProjectDesc')}</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleUpdateProject}>
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <Label htmlFor="editProjName">Name</Label>
+              <Label htmlFor="editProjName">{t('projects.name')}</Label>
               <Input
                 id="editProjName"
                 value={editName}
@@ -586,7 +594,7 @@ export default function ProjectTasksPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="editProjDesc">Description</Label>
+              <Label htmlFor="editProjDesc">{t('projects.description')}</Label>
               <Textarea
                 id="editProjDesc"
                 value={editDesc}
@@ -601,10 +609,10 @@ export default function ProjectTasksPage() {
               variant="outline"
               onClick={() => setEditProjectOpen(false)}
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button type="submit" disabled={!editName.trim()}>
-              Save Changes
+              {t('common.save')}
             </Button>
           </DialogFooter>
         </form>

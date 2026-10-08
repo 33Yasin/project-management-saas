@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useTaskAttachments } from './use-attachments';
 import { useAuth } from '@/features/auth/use-auth';
+import { useLanguage } from '@/lib/i18n/language-context';
 import type { Attachment } from '@/types/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -56,6 +57,7 @@ export function TaskAttachmentsSection({
   isWorkspaceAdminOrOwner = false,
 }: TaskAttachmentsSectionProps) {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -77,7 +79,7 @@ export function TaskAttachmentsSection({
         fileInputRef.current.value = '';
       }
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'Failed to upload file.');
+      setErrorMessage(err instanceof Error ? err.message : t('attachments.failedToUpload'));
     }
   };
 
@@ -108,7 +110,6 @@ export function TaskAttachmentsSection({
   };
 
   const handleDownload = (attachment: Attachment) => {
-    // Navigate or trigger download endpoint directly
     window.open(`/api/attachments/${attachment.id}/download`, '_blank');
   };
 
@@ -117,7 +118,7 @@ export function TaskAttachmentsSection({
     try {
       await deleteAttachment(attachmentId);
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'Failed to delete attachment.');
+      setErrorMessage(err instanceof Error ? err.message : t('attachments.failedToDelete'));
     }
   };
 
@@ -128,12 +129,14 @@ export function TaskAttachmentsSection({
           <div className="flex items-center gap-2">
             <Paperclip className="size-4 text-muted-foreground" />
             <CardTitle className="text-sm font-semibold tracking-wide">
-              Attachments
+              {t('attachments.title')}
             </CardTitle>
           </div>
           {attachments.length > 0 && (
             <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full font-medium">
-              {attachments.length} {attachments.length === 1 ? 'file' : 'files'}
+              {attachments.length === 1
+                ? t('attachments.filesCountSingle', { count: 1 })
+                : t('attachments.filesCount', { count: attachments.length })}
             </span>
           )}
         </div>
@@ -163,7 +166,7 @@ export function TaskAttachmentsSection({
             {isUploading ? (
               <div className="flex items-center gap-2 text-primary font-medium">
                 <Loader2 className="size-5 animate-spin" />
-                <span>Uploading attachment...</span>
+                <span>{t('attachments.uploading')}</span>
               </div>
             ) : (
               <>
@@ -171,10 +174,10 @@ export function TaskAttachmentsSection({
                   <UploadCloud className="size-5" />
                 </div>
                 <div>
-                  <span className="font-semibold text-foreground">Click to upload</span> or drag and drop
+                  <span className="font-semibold text-foreground">{t('attachments.clickToUpload')}</span> {t('attachments.dragAndDrop')}
                 </div>
                 <div className="text-[11px] text-muted-foreground/80">
-                  PDF, Images, Word, Excel, Text (max 10MB)
+                  {t('attachments.typesNote')}
                 </div>
               </>
             )}
@@ -192,15 +195,15 @@ export function TaskAttachmentsSection({
         {/* Attachments List */}
         {isLoading ? (
           <div className="py-4 text-center text-xs text-muted-foreground">
-            Loading attachments...
+            {t('common.loading')}
           </div>
         ) : isError ? (
           <div className="py-4 text-center text-xs text-destructive">
-            Failed to load attachments.
+            {t('attachments.failedToUpload')}
           </div>
         ) : attachments.length === 0 ? (
           <div className="py-2 text-center text-xs text-muted-foreground">
-            No attachments yet.
+            {t('attachments.noAttachments')}
           </div>
         ) : (
           <div className="space-y-2">
@@ -232,7 +235,7 @@ export function TaskAttachmentsSection({
                     <Button
                       variant="ghost"
                       size="sm"
-                      title="Download file"
+                      title={t('attachments.download')}
                       aria-label={`Download ${att.originalName}`}
                       onClick={() => handleDownload(att)}
                       className="h-7 w-7 p-0 cursor-pointer text-muted-foreground hover:text-foreground"
@@ -243,7 +246,7 @@ export function TaskAttachmentsSection({
                       <Button
                         variant="ghost"
                         size="sm"
-                        title="Delete file"
+                        title={t('attachments.delete')}
                         aria-label={`Delete ${att.originalName}`}
                         onClick={() => handleDelete(att.id)}
                         className="h-7 w-7 p-0 cursor-pointer text-muted-foreground hover:text-destructive"

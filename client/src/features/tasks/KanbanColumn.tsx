@@ -5,6 +5,7 @@ import { KanbanCard } from './KanbanCard';
 import { Button } from '@/components/ui/button';
 import { Plus, CircleDot, Clock, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/lib/i18n/language-context';
 
 interface KanbanColumnProps {
   status: TaskStatus;
@@ -23,6 +24,7 @@ export function KanbanColumn({
   projectId,
   onAddTask,
 }: KanbanColumnProps) {
+  const { t } = useLanguage();
   const { setNodeRef, isOver } = useDroppable({
     id: status,
     data: {
@@ -77,7 +79,7 @@ export function KanbanColumn({
             variant="ghost"
             size="icon"
             onClick={() => onAddTask(status)}
-            aria-label={`Add task to ${title}`}
+            aria-label={t('kanban.addTaskTo', { column: title })}
             className="size-7 text-muted-foreground hover:text-foreground cursor-pointer"
           >
             <Plus className="size-4" />
@@ -99,7 +101,7 @@ export function KanbanColumn({
 
           {tasks.length === 0 && (
             <div className="flex-1 border-2 border-dashed border-border/50 rounded-lg flex items-center justify-center p-6 text-xs text-muted-foreground/60 select-none">
-              Drop tasks here
+              {t('kanban.dropTasksHere')}
             </div>
           )}
         </div>

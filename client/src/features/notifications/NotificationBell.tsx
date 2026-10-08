@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotifications } from './use-notifications';
+import { useLanguage } from '@/lib/i18n/language-context';
 import type { Notification, NotificationType } from '@/types/api';
 import { Button } from '@/components/ui/button';
 import {
@@ -58,6 +59,7 @@ export function NotificationBell() {
   const [unreadOnly, setUnreadOnly] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const {
     notifications,
@@ -105,7 +107,7 @@ export function NotificationBell() {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        title="Notifications"
+        title={t('notifications.title')}
         aria-label="Open notifications"
         aria-expanded={isOpen}
         className="relative p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
@@ -124,10 +126,10 @@ export function NotificationBell() {
           {/* Header */}
           <div className="p-3 border-b border-border/80 flex items-center justify-between bg-muted/30">
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-xs tracking-wide">Notifications</span>
+              <span className="font-semibold text-xs tracking-wide">{t('notifications.title')}</span>
               {unreadCount > 0 && (
                 <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-semibold">
-                  {unreadCount} unread
+                  {t('notifications.unreadBadge', { count: unreadCount })}
                 </span>
               )}
             </div>
@@ -142,7 +144,7 @@ export function NotificationBell() {
                   className="h-6 px-2 text-[11px] text-muted-foreground hover:text-foreground cursor-pointer gap-1"
                 >
                   <CheckCheck className="size-3" />
-                  <span>Mark all read</span>
+                  <span>{t('notifications.markAllAsRead')}</span>
                 </Button>
               )}
             </div>
@@ -159,7 +161,7 @@ export function NotificationBell() {
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              All
+              {t('notifications.all')}
             </button>
             <button
               type="button"
@@ -170,7 +172,7 @@ export function NotificationBell() {
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              Unread only
+              {t('notifications.unread')}
             </button>
           </div>
 
@@ -179,11 +181,11 @@ export function NotificationBell() {
             {isLoading ? (
               <div className="py-8 text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
                 <Loader2 className="size-4 animate-spin" />
-                <span>Loading notifications...</span>
+                <span>{t('notifications.loading')}</span>
               </div>
             ) : notifications.length === 0 ? (
               <div className="py-8 text-center text-xs text-muted-foreground">
-                {unreadOnly ? 'No unread notifications.' : 'No notifications yet.'}
+                {unreadOnly ? t('notifications.noUnreadNotifications') : t('notifications.noNotifications')}
               </div>
             ) : (
               notifications.map((item) => (

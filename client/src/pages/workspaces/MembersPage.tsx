@@ -6,6 +6,7 @@ import {
   useWorkspaceMembers,
   useWorkspaceInvitations,
 } from '@/features/workspaces/use-workspaces';
+import { useLanguage } from '@/lib/i18n/language-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -33,6 +34,7 @@ export default function MembersPage() {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const { user } = useAuth();
   const { workspace } = useWorkspace(workspaceId);
+  const { t } = useLanguage();
   const {
     members,
     isLoading: isMembersLoading,
@@ -93,15 +95,15 @@ export default function MembersPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Team Members</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t('members.title')}</h1>
           <p className="text-sm text-muted-foreground">
-            Manage who has access to {workspace?.name || 'this workspace'} and their permission roles.
+            {t('members.subtitle', { workspace: workspace?.name || '' })}
           </p>
         </div>
         {canManageMembers && (
           <Button onClick={() => setInviteOpen(true)} className="cursor-pointer">
             <UserPlus className="size-4 mr-1.5" />
-            Invite Member
+            {t('members.inviteMember')}
           </Button>
         )}
       </div>
@@ -109,24 +111,26 @@ export default function MembersPage() {
       {/* Members Table */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Active Members ({members.length})</CardTitle>
+          <CardTitle className="text-lg">
+            {t('members.activeMembers', { count: members.length })}
+          </CardTitle>
           <CardDescription>
-            All users currently belonging to this workspace.
+            {t('members.activeMembersDesc')}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {isMembersLoading ? (
-            <p className="text-sm text-muted-foreground py-4">Loading members...</p>
+            <p className="text-sm text-muted-foreground py-4">{t('members.loadingMembers')}</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
                 <thead className="text-xs text-muted-foreground uppercase bg-muted/30 border-b border-border">
                   <tr>
-                    <th className="px-4 py-3">Member</th>
-                    <th className="px-4 py-3">Email</th>
-                    <th className="px-4 py-3">Role</th>
-                    <th className="px-4 py-3">Joined</th>
-                    {canManageMembers && <th className="px-4 py-3 text-right">Actions</th>}
+                    <th className="px-4 py-3">{t('members.member')}</th>
+                    <th className="px-4 py-3">{t('members.email')}</th>
+                    <th className="px-4 py-3">{t('members.role')}</th>
+                    <th className="px-4 py-3">{t('members.joined')}</th>
+                    {canManageMembers && <th className="px-4 py-3 text-right">{t('members.actions')}</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -139,7 +143,7 @@ export default function MembersPage() {
                     return (
                       <tr key={m.id} className="hover:bg-muted/20 transition-colors">
                         <td className="px-4 py-3.5 font-medium text-foreground">
-                          {m.user.name} {isSelf && <span className="text-xs text-muted-foreground">(You)</span>}
+                          {m.user.name} {isSelf && <span className="text-xs text-muted-foreground">{t('members.you')}</span>}
                         </td>
                         <td className="px-4 py-3.5 text-muted-foreground">{m.user.email}</td>
                         <td className="px-4 py-3.5">
@@ -183,8 +187,8 @@ export default function MembersPage() {
                                   setRemoveError(null);
                                   setMemberToRemove(m);
                                 }}
-                                title="Remove member"
-                                aria-label={`Remove member ${m.user.name}`}
+                                title={t('members.removeMemberBtn')}
+                                aria-label={`${t('members.removeMemberBtn')} ${m.user.name}`}
                                 className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
                               >
                                 <Trash2 className="size-4" />
@@ -206,9 +210,11 @@ export default function MembersPage() {
       {canManageMembers && invitations.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Pending Invitations ({invitations.length})</CardTitle>
+            <CardTitle className="text-lg">
+              {t('members.pendingInvitations', { count: invitations.length })}
+            </CardTitle>
             <CardDescription>
-              Invited people who have not accepted their invitation yet.
+              {t('members.pendingInvitationsDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -216,11 +222,11 @@ export default function MembersPage() {
               <table className="w-full text-sm text-left">
                 <thead className="text-xs text-muted-foreground uppercase bg-muted/30 border-b border-border">
                   <tr>
-                    <th className="px-4 py-3">Email</th>
-                    <th className="px-4 py-3">Role</th>
-                    <th className="px-4 py-3">Invited By</th>
-                    <th className="px-4 py-3">Expires</th>
-                    <th className="px-4 py-3 text-right">Actions</th>
+                    <th className="px-4 py-3">{t('members.email')}</th>
+                    <th className="px-4 py-3">{t('members.role')}</th>
+                    <th className="px-4 py-3">{t('members.invitedBy')}</th>
+                    <th className="px-4 py-3">{t('members.expires')}</th>
+                    <th className="px-4 py-3 text-right">{t('members.actions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -234,7 +240,7 @@ export default function MembersPage() {
                         <Badge variant="secondary">{inv.role}</Badge>
                       </td>
                       <td className="px-4 py-3.5 text-muted-foreground text-xs">
-                        {inv.invitedBy?.name || 'Workspace Admin'}
+                        {inv.invitedBy?.name || t('members.workspaceAdmin')}
                       </td>
                       <td className="px-4 py-3.5 text-muted-foreground text-xs">
                         {new Date(inv.expiresAt).toLocaleDateString()}
@@ -243,15 +249,15 @@ export default function MembersPage() {
                         <button
                           type="button"
                           onClick={() => {
-                            if (confirm(`Revoke invitation for ${inv.email}?`)) {
+                            if (confirm(t('members.revokeConfirm', { email: inv.email }))) {
                               revokeInvitation(inv.id);
                             }
                           }}
-                          title="Revoke invitation"
-                          aria-label={`Revoke invitation for ${inv.email}`}
+                          title={t('members.revoke')}
+                          aria-label={`${t('members.revoke')} ${inv.email}`}
                           className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer text-xs"
                         >
-                          Revoke
+                          {t('members.revoke')}
                         </button>
                       </td>
                     </tr>
@@ -275,30 +281,30 @@ export default function MembersPage() {
         }}
       >
         <DialogHeader>
-          <DialogTitle>Invite New Team Member</DialogTitle>
+          <DialogTitle>{t('members.inviteNewMemberTitle')}</DialogTitle>
           <DialogDescription>
-            Send an invitation link to collaborate in {workspace?.name}.
+            {t('members.inviteNewMemberDesc', { workspace: workspace?.name || '' })}
           </DialogDescription>
         </DialogHeader>
 
         {createdInviteLink ? (
           <div className="space-y-4 py-3">
             <div className="p-3 text-sm rounded-md bg-emerald-50 text-emerald-900 border border-emerald-200 dark:bg-emerald-950 dark:text-emerald-200 dark:border-emerald-800">
-              <p className="font-semibold mb-1">Invitation Created!</p>
+              <p className="font-semibold mb-1">{t('members.inviteCreated')}</p>
               <p className="text-xs">
-                Since external email sending is disabled in V1, share this direct link with the user:
+                {t('members.inviteCreatedNote')}
               </p>
             </div>
             <div className="flex items-center gap-2">
               <Input value={createdInviteLink} readOnly className="text-xs font-mono" />
               <Button onClick={handleCopyLink} size="sm" variant="outline" className="cursor-pointer shrink-0">
                 {copied ? <Check className="size-4 text-emerald-600" /> : <Copy className="size-4" />}
-                <span className="ml-1">{copied ? 'Copied' : 'Copy'}</span>
+                <span className="ml-1">{copied ? t('common.copied') : t('common.copy')}</span>
               </Button>
             </div>
             <DialogFooter>
               <Button onClick={() => setInviteOpen(false)} className="w-full cursor-pointer">
-                Done
+                {t('common.done')}
               </Button>
             </DialogFooter>
           </div>
@@ -311,7 +317,7 @@ export default function MembersPage() {
                 </div>
               )}
               <div className="space-y-1.5">
-                <Label htmlFor="invEmail">Email Address</Label>
+                <Label htmlFor="invEmail">{t('members.emailAddress')}</Label>
                 <Input
                   id="invEmail"
                   type="email"
@@ -323,15 +329,15 @@ export default function MembersPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="invRole">Role</Label>
+                <Label htmlFor="invRole">{t('members.role')}</Label>
                 <Select
                   id="invRole"
                   value={inviteRole}
                   onChange={(e) => setInviteRole(e.target.value as 'ADMIN' | 'MEMBER')}
                   disabled={isCreatingInvitation}
                 >
-                  <option value="MEMBER">MEMBER (Can view and edit projects/tasks)</option>
-                  <option value="ADMIN">ADMIN (Can also manage members and workspace)</option>
+                  <option value="MEMBER">{t('members.roleMemberDesc')}</option>
+                  <option value="ADMIN">{t('members.roleAdminDesc')}</option>
                 </Select>
               </div>
             </div>
@@ -342,10 +348,10 @@ export default function MembersPage() {
                 onClick={() => setInviteOpen(false)}
                 disabled={isCreatingInvitation}
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button type="submit" disabled={isCreatingInvitation || !inviteEmail.trim()}>
-                {isCreatingInvitation ? 'Generating Link...' : 'Create Invitation'}
+                {isCreatingInvitation ? t('members.generatingLink') : t('members.createInvitationBtn')}
               </Button>
             </DialogFooter>
           </form>
@@ -366,9 +372,13 @@ export default function MembersPage() {
           <div className="size-10 rounded-full bg-destructive/10 text-destructive flex items-center justify-center mb-2">
             <AlertTriangle className="size-5" />
           </div>
-          <DialogTitle className="text-destructive">Remove Team Member</DialogTitle>
+          <DialogTitle className="text-destructive">{t('members.removeMember')}</DialogTitle>
           <DialogDescription>
-            Are you sure you want to remove <span className="font-semibold text-foreground">{memberToRemove?.user.name}</span> ({memberToRemove?.user.email}) from <span className="font-semibold text-foreground">{workspace?.name}</span>?
+            {t('members.removeMemberConfirm', {
+              name: memberToRemove?.user.name || '',
+              email: memberToRemove?.user.email || '',
+              workspace: workspace?.name || '',
+            })}
           </DialogDescription>
         </DialogHeader>
 
@@ -379,7 +389,7 @@ export default function MembersPage() {
         )}
 
         <p className="text-xs text-muted-foreground py-2">
-          This user will immediately lose access to all projects, tasks, and discussions within this workspace.
+          {t('members.removeMemberWarning')}
         </p>
 
         <DialogFooter>
@@ -392,7 +402,7 @@ export default function MembersPage() {
             }}
             disabled={isRemovingMember}
           >
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button
             type="button"
@@ -412,7 +422,7 @@ export default function MembersPage() {
             disabled={isRemovingMember}
             className="cursor-pointer"
           >
-            {isRemovingMember ? 'Removing...' : 'Remove Member'}
+            {isRemovingMember ? t('members.removing') : t('members.removeMemberBtn')}
           </Button>
         </DialogFooter>
       </Dialog>

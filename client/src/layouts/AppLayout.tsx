@@ -153,7 +153,7 @@ export default function AppLayout() {
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs font-semibold truncate">
-                    {activeWorkspace?.name || 'Select Workspace'}
+                    {activeWorkspace?.name || t('workspaces.selectWorkspace')}
                   </p>
                   {activeWorkspace?.role && (
                     <Badge variant="outline" className="text-[10px] px-1 py-0 h-4">
@@ -169,7 +169,7 @@ export default function AppLayout() {
             {wsSwitchOpen && (
               <div className="absolute top-full left-0 w-full mt-1.5 bg-popover border border-border rounded-lg shadow-lg z-50 p-1 space-y-1">
                 <div className="px-2 py-1 text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-                  Workspaces
+                  {t('workspaces.title')}
                 </div>
                 <div className="max-h-48 overflow-y-auto space-y-0.5">
                   {workspaces.map((ws) => (
@@ -203,7 +203,7 @@ export default function AppLayout() {
                     className="w-full flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-primary hover:bg-muted rounded-md transition-colors cursor-pointer font-medium"
                   >
                     <Plus className="size-3.5" />
-                    <span>Create Workspace</span>
+                    <span>{t('workspaces.createWorkspace')}</span>
                   </button>
                 </div>
               </div>
@@ -245,8 +245,8 @@ export default function AppLayout() {
               type="button"
               onClick={handleLogout}
               disabled={isLoggingOut}
-              title="Sign out"
-              aria-label="Sign out"
+              title={t('auth.signOut')}
+              aria-label={t('auth.signOut')}
               className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
             >
               <LogOut className="size-4" />
@@ -270,7 +270,7 @@ export default function AppLayout() {
             </button>
             <div className="flex items-center gap-2 text-sm">
               <span className="font-semibold text-foreground">
-                {activeWorkspace?.name || 'Workspaces'}
+                {activeWorkspace?.name || t('workspaces.title')}
               </span>
             </div>
           </div>
@@ -296,9 +296,9 @@ export default function AppLayout() {
       {/* Create Workspace Dialog */}
       <Dialog open={createWsOpen} onOpenChange={setCreateWsOpen}>
         <DialogHeader>
-          <DialogTitle>Create New Workspace</DialogTitle>
+          <DialogTitle>{t('workspaces.createWorkspaceTitle')}</DialogTitle>
           <DialogDescription>
-            Workspaces organize projects, tasks, and team members.
+            {t('workspaces.createWorkspaceDesc')}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleCreateWorkspace}>
@@ -309,10 +309,10 @@ export default function AppLayout() {
               </div>
             )}
             <div className="space-y-1.5">
-              <Label htmlFor="wsName">Workspace Name</Label>
+              <Label htmlFor="wsName">{t('workspaces.workspaceName')}</Label>
               <Input
                 id="wsName"
-                placeholder="e.g. Acme Studio"
+                placeholder={t('workspaces.workspaceNamePlaceholder')}
                 value={newWsName}
                 onChange={(e) => setNewWsName(e.target.value)}
                 disabled={isCreating}
@@ -327,10 +327,10 @@ export default function AppLayout() {
               onClick={() => setCreateWsOpen(false)}
               disabled={isCreating}
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button type="submit" disabled={isCreating || !newWsName.trim()}>
-              {isCreating ? 'Creating...' : 'Create Workspace'}
+              {isCreating ? t('projects.creating') : t('workspaces.createWorkspace')}
             </Button>
           </DialogFooter>
         </form>

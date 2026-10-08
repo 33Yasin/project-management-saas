@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/features/auth/use-auth';
 import { useTask, useTaskComments } from '@/features/tasks/use-tasks';
 import { useWorkspaceMembers } from '@/features/workspaces/use-workspaces';
+import { useLanguage } from '@/lib/i18n/language-context';
 import type { TaskStatus, TaskPriority } from '@/types/api';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -31,6 +32,7 @@ export default function TaskDetailPage() {
   const { workspaceId: paramWsId, taskId } = useParams<{ workspaceId?: string; taskId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const { task, isLoading, updateTask, isUpdating, deleteTask, isDeleting } = useTask(taskId);
   const { comments, createComment, isCreating, deleteComment } = useTaskComments(taskId);
 
@@ -71,7 +73,7 @@ export default function TaskDetailPage() {
   if (isLoading) {
     return (
       <div className="p-12 text-center text-sm text-muted-foreground">
-        Loading task details...
+        {t('tasks.loadingTasks')}
       </div>
     );
   }
@@ -79,12 +81,12 @@ export default function TaskDetailPage() {
   if (!task) {
     return (
       <div className="p-12 text-center">
-        <p className="text-base font-semibold mb-2">Task not found</p>
+        <p className="text-base font-semibold mb-2">{t('tasks.taskNotFound')}</p>
         <Link
           to={currentWorkspaceId ? `/workspaces/${currentWorkspaceId}/projects` : '/workspaces'}
           className={cn(buttonVariants({ variant: 'outline' }))}
         >
-          Back to Projects
+          {t('tasks.backToProjects')}
         </Link>
       </div>
     );
@@ -103,7 +105,7 @@ export default function TaskDetailPage() {
           className="inline-flex items-center text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
           <ChevronLeft className="size-4 mr-1" />
-          Back to {task.project?.name || 'Project'} Tasks
+          {t('tasks.backToTasks', { project: task.project?.name || 'Project' })}
         </Link>
         <Button
           variant="outline"
@@ -112,7 +114,7 @@ export default function TaskDetailPage() {
           className="text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer h-8"
         >
           <Trash2 className="size-3.5 mr-1.5" />
-          Delete Task
+          {t('tasks.deleteTask')}
         </Button>
       </div>
 
@@ -128,7 +130,7 @@ export default function TaskDetailPage() {
               <div className="text-sm text-foreground/90 whitespace-pre-wrap min-h-[60px]">
                 {task.description || (
                   <span className="text-muted-foreground italic text-xs">
-                    No description provided.
+                    {t('projects.noDescription')}
                   </span>
                 )}
               </div>
@@ -140,14 +142,14 @@ export default function TaskDetailPage() {
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-semibold flex items-center gap-2">
                 <MessageSquare className="size-4" />
-                Discussion & Comments ({comments.length})
+                {t('tasks.discussion', { count: comments.length })}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Existing comments list */}
               {comments.length === 0 ? (
                 <p className="text-xs text-muted-foreground py-2 italic">
-                  No comments yet. Start the conversation below.
+                  {t('tasks.noComments')}
                 </p>
               ) : (
                 <div className="space-y-3">
@@ -180,8 +182,8 @@ export default function TaskDetailPage() {
                             <button
                               type="button"
                               onClick={() => deleteComment(comment.id)}
-                              title="Delete comment"
-                              aria-label="Delete comment"
+                              title={t('tasks.deleteComment')}
+                              aria-label={t('tasks.deleteComment')}
                               className="p-1 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer transition-colors"
                             >
                               <Trash2 className="size-3.5" />
@@ -203,7 +205,7 @@ export default function TaskDetailPage() {
                   <p className="text-xs text-destructive">{commentError}</p>
                 )}
                 <Textarea
-                  placeholder="Write a comment..."
+                  placeholder={t('tasks.writeCommentPlaceholder')}
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   rows={2}
@@ -218,7 +220,7 @@ export default function TaskDetailPage() {
                     className="cursor-pointer gap-1.5 h-8 text-xs"
                   >
                     <Send className="size-3" />
-                    {isCreating ? 'Posting...' : 'Post Comment'}
+                    {isCreating ? t('tasks.posting') : t('tasks.postComment')}
                   </Button>
                 </div>
               </form>
@@ -240,14 +242,14 @@ export default function TaskDetailPage() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                Properties
+                {t('tasks.properties')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 text-xs">
               {/* Status */}
               <div className="space-y-1.5">
                 <Label htmlFor="propStatus" className="text-xs text-muted-foreground">
-                  Status
+                  {t('tasks.status')}
                 </Label>
                 <Select
                   id="propStatus"
@@ -256,16 +258,16 @@ export default function TaskDetailPage() {
                   disabled={isUpdating}
                   className="h-8 text-xs"
                 >
-                  <option value="TODO">To Do</option>
-                  <option value="IN_PROGRESS">In Progress</option>
-                  <option value="DONE">Done</option>
+                  <option value="TODO">{t('tasks.toDo')}</option>
+                  <option value="IN_PROGRESS">{t('tasks.inProgress')}</option>
+                  <option value="DONE">{t('tasks.done')}</option>
                 </Select>
               </div>
 
               {/* Priority */}
               <div className="space-y-1.5">
                 <Label htmlFor="propPriority" className="text-xs text-muted-foreground">
-                  Priority
+                  {t('tasks.priority')}
                 </Label>
                 <Select
                   id="propPriority"
@@ -274,16 +276,16 @@ export default function TaskDetailPage() {
                   disabled={isUpdating}
                   className="h-8 text-xs"
                 >
-                  <option value="LOW">Low</option>
-                  <option value="MEDIUM">Medium</option>
-                  <option value="HIGH">High</option>
+                  <option value="LOW">{t('tasks.low')}</option>
+                  <option value="MEDIUM">{t('tasks.medium')}</option>
+                  <option value="HIGH">{t('tasks.high')}</option>
                 </Select>
               </div>
 
               {/* Assignee */}
               <div className="space-y-1.5">
                 <Label htmlFor="propAssignee" className="text-xs text-muted-foreground">
-                  Assignee
+                  {t('tasks.assigneeProp')}
                 </Label>
                 <Select
                   id="propAssignee"
@@ -294,7 +296,7 @@ export default function TaskDetailPage() {
                   disabled={isUpdating}
                   className="h-8 text-xs"
                 >
-                  <option value="">Unassigned</option>
+                  <option value="">{t('tasks.unassigned')}</option>
                   {members.map((m) => (
                     <option key={m.userId} value={m.userId}>
                       {m.user.name}
@@ -306,7 +308,7 @@ export default function TaskDetailPage() {
               {/* Due Date */}
               <div className="space-y-1.5">
                 <Label htmlFor="propDueDate" className="text-xs text-muted-foreground">
-                  Due Date
+                  {t('tasks.dueDateProp')}
                 </Label>
                 <input
                   id="propDueDate"
@@ -322,17 +324,17 @@ export default function TaskDetailPage() {
 
               <div className="pt-3 border-t border-border space-y-2 text-[11px] text-muted-foreground">
                 <div className="flex justify-between">
-                  <span>Created by:</span>
+                  <span>{t('tasks.createdBy')}</span>
                   <span className="font-medium text-foreground">
                     {task.createdBy?.name || 'User'}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Created at:</span>
+                  <span>{t('tasks.createdAt')}</span>
                   <span>{new Date(task.createdAt).toLocaleDateString()}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Project:</span>
+                  <span>{t('tasks.project')}</span>
                   <span className="font-medium text-foreground">
                     {task.project?.name}
                   </span>
@@ -349,9 +351,9 @@ export default function TaskDetailPage() {
           <div className="size-10 rounded-full bg-destructive/10 text-destructive flex items-center justify-center mb-2">
             <AlertTriangle className="size-5" />
           </div>
-          <DialogTitle className="text-destructive">Delete Task</DialogTitle>
+          <DialogTitle className="text-destructive">{t('tasks.deleteTaskTitle')}</DialogTitle>
           <DialogDescription>
-            Are you sure you want to permanently delete "{task.title}" and its comments?
+            {t('tasks.deleteTaskConfirm', { title: task.title })}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
@@ -361,7 +363,7 @@ export default function TaskDetailPage() {
             onClick={() => setDeleteOpen(false)}
             disabled={isDeleting}
           >
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button
             type="button"
@@ -369,7 +371,7 @@ export default function TaskDetailPage() {
             onClick={handleDeleteTask}
             disabled={isDeleting}
           >
-            {isDeleting ? 'Deleting...' : 'Delete Task'}
+            {isDeleting ? t('tasks.deleting') : t('tasks.deleteTask')}
           </Button>
         </DialogFooter>
       </Dialog>

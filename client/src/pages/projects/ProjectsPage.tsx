@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useProjects } from '@/features/projects/use-projects';
 import { useWorkspace } from '@/features/workspaces/use-workspaces';
+import { useLanguage } from '@/lib/i18n/language-context';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
@@ -28,6 +29,7 @@ export default function ProjectsPage() {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const { workspace } = useWorkspace(workspaceId);
   const { projects, isLoading, createProject, isCreating } = useProjects(workspaceId);
+  const { t } = useLanguage();
 
   const [createOpen, setCreateOpen] = useState(false);
   const [name, setName] = useState('');
@@ -56,33 +58,33 @@ export default function ProjectsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Projects</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t('projects.title')}</h1>
           <p className="text-sm text-muted-foreground">
-            Manage your team's initiatives and project roadmaps in {workspace?.name}.
+            {t('projects.subtitle', { workspace: workspace?.name || '' })}
           </p>
         </div>
         <Button onClick={() => setCreateOpen(true)} className="cursor-pointer">
           <Plus className="size-4 mr-1.5" />
-          New Project
+          {t('projects.newProject')}
         </Button>
       </div>
 
       {isLoading ? (
         <div className="flex items-center justify-center p-12">
-          <p className="text-muted-foreground text-sm">Loading projects...</p>
+          <p className="text-muted-foreground text-sm">{t('projects.loadingProjects')}</p>
         </div>
       ) : projects.length === 0 ? (
         <Card className="p-12 text-center border-dashed">
           <div className="size-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
             <FolderKanban className="size-6 text-muted-foreground" />
           </div>
-          <h3 className="font-semibold text-lg mb-1">No projects found</h3>
+          <h3 className="font-semibold text-lg mb-1">{t('projects.noProjects')}</h3>
           <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-4">
-            Projects help group related tasks, assign responsibilities, and track deliverables.
+            {t('projects.noProjectsDesc')}
           </p>
           <Button onClick={() => setCreateOpen(true)} className="cursor-pointer">
             <Plus className="size-4 mr-1.5" />
-            Create First Project
+            {t('projects.createFirstProject')}
           </Button>
         </Card>
       ) : (
@@ -99,14 +101,14 @@ export default function ProjectsPage() {
                   </div>
                   <Badge variant="secondary" className="flex items-center gap-1">
                     <CheckSquare className="size-3" />
-                    <span>{project._count?.tasks || 0} tasks</span>
+                    <span>{t('projects.tasksCount', { count: project._count?.tasks || 0 })}</span>
                   </Badge>
                 </div>
                 <CardTitle className="text-lg group-hover:text-primary transition-colors">
                   {project.name}
                 </CardTitle>
                 <CardDescription className="line-clamp-2">
-                  {project.description || 'No description provided.'}
+                  {project.description || t('projects.noDescription')}
                 </CardDescription>
               </CardHeader>
               <CardFooter className="pt-2">
@@ -114,7 +116,7 @@ export default function ProjectsPage() {
                   to={`/workspaces/${workspaceId}/projects/${project.id}/tasks`}
                   className={cn(buttonVariants({ variant: 'outline' }), 'w-full justify-between cursor-pointer')}
                 >
-                  <span>View Tasks</span>
+                  <span>{t('projects.viewTasks')}</span>
                   <ArrowRight className="size-4" />
                 </Link>
               </CardFooter>
@@ -126,9 +128,9 @@ export default function ProjectsPage() {
       {/* Create Project Dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogHeader>
-          <DialogTitle>Create New Project</DialogTitle>
+          <DialogTitle>{t('projects.createProjectTitle')}</DialogTitle>
           <DialogDescription>
-            Add a project to organize tasks in {workspace?.name}.
+            {t('projects.createProjectDesc', { workspace: workspace?.name || '' })}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleCreate}>
@@ -139,10 +141,10 @@ export default function ProjectsPage() {
               </div>
             )}
             <div className="space-y-1.5">
-              <Label htmlFor="projName">Project Name</Label>
+              <Label htmlFor="projName">{t('projects.projectName')}</Label>
               <Input
                 id="projName"
-                placeholder="e.g. Website Overhaul"
+                placeholder={t('projects.projectNamePlaceholder')}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 disabled={isCreating}
@@ -150,10 +152,10 @@ export default function ProjectsPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="projDesc">Description (optional)</Label>
+              <Label htmlFor="projDesc">{t('projects.description')}</Label>
               <Textarea
                 id="projDesc"
-                placeholder="Brief summary of the goals and deliverables..."
+                placeholder={t('projects.descriptionPlaceholder')}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 disabled={isCreating}
@@ -168,10 +170,10 @@ export default function ProjectsPage() {
               onClick={() => setCreateOpen(false)}
               disabled={isCreating}
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button type="submit" disabled={isCreating || !name.trim()}>
-              {isCreating ? 'Creating...' : 'Create Project'}
+              {isCreating ? t('projects.creating') : t('projects.createProjectBtn')}
             </Button>
           </DialogFooter>
         </form>

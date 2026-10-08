@@ -15,6 +15,7 @@ import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import type { Task, TaskStatus } from '@/types/api';
 import { KanbanColumn } from './KanbanColumn';
 import { KanbanCard } from './KanbanCard';
+import { useLanguage } from '@/lib/i18n/language-context';
 
 interface KanbanBoardProps {
   tasks: Task[];
@@ -24,11 +25,7 @@ interface KanbanBoardProps {
   onAddTask?: (status: TaskStatus) => void;
 }
 
-const COLUMNS: { status: TaskStatus; title: string }[] = [
-  { status: 'TODO', title: 'To Do' },
-  { status: 'IN_PROGRESS', title: 'In Progress' },
-  { status: 'DONE', title: 'Done' },
-];
+const STATIC_COLUMNS: TaskStatus[] = ['TODO', 'IN_PROGRESS', 'DONE'];
 
 export function KanbanBoard({
   tasks,
@@ -37,7 +34,14 @@ export function KanbanBoard({
   onMoveTask,
   onAddTask,
 }: KanbanBoardProps) {
+  const { t } = useLanguage();
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+
+  const columns: { status: TaskStatus; title: string }[] = [
+    { status: 'TODO', title: t('kanban.toDo') },
+    { status: 'IN_PROGRESS', title: t('kanban.inProgress') },
+    { status: 'DONE', title: t('kanban.done') },
+  ];
 
   // Setup sensors with activation constraints
   const mouseSensor = useSensor(MouseSensor, {
@@ -114,7 +118,7 @@ export function KanbanBoard({
       const destColumnTasks = getColumnTasks(destinationStatus);
       const overIndex = destColumnTasks.findIndex((t) => t.id === overId);
       targetIndex = overIndex >= 0 ? overIndex : destColumnTasks.length;
-    } else if (COLUMNS.some((col) => col.status === overId)) {
+    } else if (STATIC_COLUMNS.includes(overId as TaskStatus)) {
       destinationStatus = overId as TaskStatus;
       const destColumnTasks = getColumnTasks(destinationStatus);
       targetIndex = destColumnTasks.length;
@@ -152,7 +156,7 @@ export function KanbanBoard({
       onDragEnd={handleDragEnd}
     >
       <div className="flex flex-col md:flex-row items-start gap-4 overflow-x-auto pb-4 pt-1 w-full">
-        {COLUMNS.map((column) => (
+        {columns.map((column) => (
           <KanbanColumn
             key={column.status}
             status={column.status}
