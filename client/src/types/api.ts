@@ -125,6 +125,22 @@ export interface Comment {
   };
 }
 
+export interface Attachment {
+  id: string;
+  taskId: string;
+  uploadedById: string;
+  originalName: string;
+  storageKey: string;
+  mimeType: string;
+  sizeBytes: number;
+  createdAt: string;
+  uploadedBy?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+}
+
 export interface Pagination {
   page: number;
   limit: number;

@@ -31,3 +31,7 @@ coverage/
 .windsurf/
 skills-lock.json
 
+# Uploads / storage
+uploads/
+server/uploads/
+

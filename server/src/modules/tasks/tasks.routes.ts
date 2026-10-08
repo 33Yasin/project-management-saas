@@ -14,6 +14,7 @@ import {
 import { projectIdParamSchema } from '../projects/projects.schemas';
 import { taskCommentsRouter } from '../comments/comments.routes';
 import { taskActivitiesRouter } from '../activities/activity.routes';
+import { taskAttachmentsRouter } from '../attachments/attachment.routes';
 
 // Project-scoped router (/api/projects/:projectId/tasks)
 export const projectTasksRouter = Router({ mergeParams: true });
@@ -84,5 +85,8 @@ tasksRouter.use('/:taskId/comments', taskCommentsRouter);
 
 // Nested routes for activities
 tasksRouter.use('/:taskId/activities', taskActivitiesRouter);
+
+// Nested routes for attachments
+tasksRouter.use('/:taskId/attachments', taskAttachmentsRouter);
 
 export default tasksRouter;

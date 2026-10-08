@@ -23,17 +23,24 @@ const API_BASE_URL = (import.meta.env.VITE_API_URL as string | undefined) || '';
 export async function apiFetch<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
   const { body, headers, ...rest } = options;
 
+  const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
+
+  const defaultHeaders: Record<string, string> = {};
+  if (!isFormData) {
+    defaultHeaders['Content-Type'] = 'application/json';
+  }
+
   const config: RequestInit = {
     ...rest,
     credentials: 'include',
     headers: {
-      'Content-Type': 'application/json',
+      ...defaultHeaders,
       ...headers,
     },
   };
 
   if (body !== undefined) {
-    config.body = JSON.stringify(body);
+    config.body = isFormData ? (body as BodyInit) : JSON.stringify(body);
   }
 
   const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;

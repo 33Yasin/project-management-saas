@@ -25,6 +25,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { TaskActivityTimeline } from '@/features/activities/TaskActivityTimeline';
+import { TaskAttachmentsSection } from '@/features/attachments/TaskAttachmentsSection';
 
 export default function TaskDetailPage() {
   const { workspaceId: paramWsId, taskId } = useParams<{ workspaceId?: string; taskId: string }>();
@@ -223,6 +224,12 @@ export default function TaskDetailPage() {
               </form>
             </CardContent>
           </Card>
+
+          {/* Task Attachments */}
+          <TaskAttachmentsSection
+            taskId={task.id}
+            isWorkspaceAdminOrOwner={canDeleteAnyComment}
+          />
 
           {/* Activity History Timeline */}
           <TaskActivityTimeline taskId={task.id} />
