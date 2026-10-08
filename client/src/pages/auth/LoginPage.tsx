@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/features/auth/use-auth';
 import { ApiError } from '@/lib/api/api-fetch';
+import { useLanguage } from '@/lib/i18n/language-context';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
 import { LanguageToggle } from '@/components/common/LanguageToggle';
@@ -19,28 +20,33 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 
-const loginSchema = z.object({
-  email: z.string().trim().email('Please enter a valid email address'),
-  password: z.string().min(1, 'Password is required'),
-});
-
-type LoginFormInput = z.input<typeof loginSchema>;
-type LoginFormOutput = z.output<typeof loginSchema>;
-
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, isLoggingIn } = useAuth({ enabled: false });
+  const { t } = useLanguage();
   const [serverError, setServerError] = useState<string | null>(null);
 
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/workspaces';
+
+  const schema = useMemo(
+    () =>
+      z.object({
+        email: z.string().trim().email(t('auth.emailInvalid')),
+        password: z.string().min(1, t('auth.passwordRequired')),
+      }),
+    [t]
+  );
+
+  type LoginFormInput = z.input<typeof schema>;
+  type LoginFormOutput = z.output<typeof schema>;
 
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<LoginFormInput, unknown, LoginFormOutput>({
-    resolver: zodResolver(loginSchema),
+    resolver: zodResolver(schema),
     defaultValues: {
       email: '',
       password: '',
@@ -57,9 +63,9 @@ export default function LoginPage() {
       navigate(from, { replace: true });
     } catch (err) {
       if (err instanceof ApiError) {
-        setServerError(err.message || 'Invalid email or password');
+        setServerError(err.message || t('auth.invalidCredentials'));
       } else {
-        setServerError('An unexpected error occurred. Please try again.');
+        setServerError(t('auth.unexpectedError'));
       }
     }
   };
@@ -72,9 +78,9 @@ export default function LoginPage() {
       </div>
       <Card className="w-full max-w-md shadow-md border-border/80">
         <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-2xl font-bold tracking-tight">Sign in</CardTitle>
+          <CardTitle className="text-2xl font-bold tracking-tight">{t('auth.signInTitle')}</CardTitle>
           <CardDescription>
-            Enter your email and password to access your workspaces
+            {t('auth.signInSubtitle')}
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
@@ -85,11 +91,11 @@ export default function LoginPage() {
               </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t('auth.email')}</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="name@example.com"
+                placeholder={t('auth.emailPlaceholder')}
                 autoComplete="email"
                 disabled={isLoggingIn}
                 {...register('email')}
@@ -100,7 +106,7 @@ export default function LoginPage() {
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{t('auth.password')}</Label>
               </div>
               <Input
                 id="password"
@@ -117,12 +123,12 @@ export default function LoginPage() {
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
             <Button type="submit" className="w-full cursor-pointer" disabled={isLoggingIn}>
-              {isLoggingIn ? 'Signing in...' : 'Sign In'}
+              {isLoggingIn ? t('auth.signingIn') : t('auth.signIn')}
             </Button>
             <p className="text-sm text-center text-muted-foreground">
-              Don't have an account?{' '}
+              {t('auth.dontHaveAccount')}{' '}
               <Link to="/register" className="text-primary hover:underline font-medium">
-                Create an account
+                {t('auth.createAnAccount')}
               </Link>
             </p>
           </CardFooter>

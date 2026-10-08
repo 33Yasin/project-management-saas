@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/features/auth/use-auth';
 import { ApiError } from '@/lib/api/api-fetch';
+import { useLanguage } from '@/lib/i18n/language-context';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
 import { LanguageToggle } from '@/components/common/LanguageToggle';
@@ -19,30 +20,35 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 
-const registerSchema = z.object({
-  name: z.string().trim().min(2, 'Name must be at least 2 characters'),
-  email: z.string().trim().email('Please enter a valid email address'),
-  password: z
-    .string()
-    .min(8, 'Password must be at least 8 characters')
-    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-    .regex(/[0-9]/, 'Password must contain at least one number'),
-});
-
-type RegisterFormInput = z.input<typeof registerSchema>;
-type RegisterFormOutput = z.output<typeof registerSchema>;
-
 export default function RegisterPage() {
   const navigate = useNavigate();
   const { register: registerUser, isRegistering } = useAuth({ enabled: false });
+  const { t } = useLanguage();
   const [serverError, setServerError] = useState<string | null>(null);
+
+  const schema = useMemo(
+    () =>
+      z.object({
+        name: z.string().trim().min(2, t('auth.nameMinLength')),
+        email: z.string().trim().email(t('auth.emailInvalid')),
+        password: z
+          .string()
+          .min(8, t('auth.passwordMinLength'))
+          .regex(/[A-Z]/, t('auth.passwordUppercase'))
+          .regex(/[0-9]/, t('auth.passwordNumber')),
+      }),
+    [t]
+  );
+
+  type RegisterFormInput = z.input<typeof schema>;
+  type RegisterFormOutput = z.output<typeof schema>;
 
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<RegisterFormInput, unknown, RegisterFormOutput>({
-    resolver: zodResolver(registerSchema),
+    resolver: zodResolver(schema),
     defaultValues: {
       name: '',
       email: '',
@@ -61,9 +67,9 @@ export default function RegisterPage() {
       navigate('/workspaces', { replace: true });
     } catch (err) {
       if (err instanceof ApiError) {
-        setServerError(err.message || 'Registration failed');
+        setServerError(err.message || t('auth.registrationFailed'));
       } else {
-        setServerError('An unexpected error occurred. Please try again.');
+        setServerError(t('auth.unexpectedError'));
       }
     }
   };
@@ -76,9 +82,9 @@ export default function RegisterPage() {
       </div>
       <Card className="w-full max-w-md shadow-md border-border/80">
         <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-2xl font-bold tracking-tight">Create an account</CardTitle>
+          <CardTitle className="text-2xl font-bold tracking-tight">{t('auth.signUpTitle')}</CardTitle>
           <CardDescription>
-            Enter your details below to create your account and get started
+            {t('auth.signUpSubtitle')}
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
@@ -89,11 +95,11 @@ export default function RegisterPage() {
               </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
+              <Label htmlFor="name">{t('auth.fullName')}</Label>
               <Input
                 id="name"
                 type="text"
-                placeholder="John Doe"
+                placeholder={t('auth.fullNamePlaceholder')}
                 autoComplete="name"
                 disabled={isRegistering}
                 {...register('name')}
@@ -103,11 +109,11 @@ export default function RegisterPage() {
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t('auth.email')}</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="name@example.com"
+                placeholder={t('auth.emailPlaceholder')}
                 autoComplete="email"
                 disabled={isRegistering}
                 {...register('email')}
@@ -117,7 +123,7 @@ export default function RegisterPage() {
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t('auth.password')}</Label>
               <Input
                 id="password"
                 type="password"
@@ -133,12 +139,12 @@ export default function RegisterPage() {
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
             <Button type="submit" className="w-full cursor-pointer" disabled={isRegistering}>
-              {isRegistering ? 'Creating account...' : 'Create Account'}
+              {isRegistering ? t('auth.creatingAccount') : t('auth.createAccount')}
             </Button>
             <p className="text-sm text-center text-muted-foreground">
-              Already have an account?{' '}
+              {t('auth.alreadyHaveAccount')}{' '}
               <Link to="/login" className="text-primary hover:underline font-medium">
-                Sign in
+                {t('auth.signIn')}
               </Link>
             </p>
           </CardFooter>

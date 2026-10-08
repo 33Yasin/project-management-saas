@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch, ApiError } from '@/lib/api/api-fetch';
 import type { InvitationPreview, WorkspaceMember } from '@/types/api';
 import { useAuth } from '@/features/auth/use-auth';
+import { useLanguage } from '@/lib/i18n/language-context';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
 import { LanguageToggle } from '@/components/common/LanguageToggle';
@@ -24,6 +25,7 @@ export default function InvitationPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const { t } = useLanguage();
   const [acceptError, setAcceptError] = useState<string | null>(null);
 
   const {
@@ -66,7 +68,7 @@ export default function InvitationPage() {
   if (isInviteLoading || isAuthLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted/40 p-4">
-        <p className="text-muted-foreground text-sm">Loading invitation details...</p>
+        <p className="text-muted-foreground text-sm">{t('invitations.loadingDetails')}</p>
       </div>
     );
   }
@@ -78,15 +80,15 @@ export default function InvitationPage() {
           <div className="size-12 rounded-full bg-destructive/10 text-destructive flex items-center justify-center mx-auto mb-4">
             <AlertTriangle className="size-6" />
           </div>
-          <CardTitle className="text-xl mb-2">Invalid or Expired Invitation</CardTitle>
+          <CardTitle className="text-xl mb-2">{t('invitations.invalidTitle')}</CardTitle>
           <CardDescription className="mb-6">
-            This invitation link is invalid, has expired, or has already been accepted.
+            {t('invitations.invalidDesc')}
           </CardDescription>
           <Link
             to="/workspaces"
             className={cn(buttonVariants({ variant: 'default' }), 'w-full cursor-pointer')}
           >
-            Go to Workspaces
+            {t('invitations.goToWorkspaces')}
           </Link>
         </Card>
       </div>
@@ -107,9 +109,9 @@ export default function InvitationPage() {
           <div className="size-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto mb-3">
             <Building2 className="size-6" />
           </div>
-          <CardTitle className="text-2xl font-bold">You've been invited!</CardTitle>
+          <CardTitle className="text-2xl font-bold">{t('invitations.invitedTitle')}</CardTitle>
           <CardDescription>
-            Join <span className="font-semibold text-foreground">{invitation.workspace.name}</span> on Agora
+            {t('invitations.invitedSubtitle', { workspace: invitation.workspace.name })}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -122,25 +124,28 @@ export default function InvitationPage() {
           <div className="bg-muted/50 rounded-lg p-4 space-y-2 text-sm border border-border/50">
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground flex items-center gap-1.5">
-                <UserCheck className="size-4" /> Invited by:
+                <UserCheck className="size-4" /> {t('invitations.invitedBy')}
               </span>
               <span className="font-medium text-foreground">{invitation.invitedBy.name}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground flex items-center gap-1.5">
-                <Mail className="size-4" /> Sent to:
+                <Mail className="size-4" /> {t('invitations.sentTo')}
               </span>
               <span className="font-medium text-foreground">{invitation.email}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Assigned Role:</span>
+              <span className="text-muted-foreground">{t('invitations.assignedRole')}</span>
               <Badge variant="secondary">{invitation.role}</Badge>
             </div>
           </div>
 
           {isAuthenticated && !isEmailMatch && (
             <div className="p-3 text-xs rounded-md bg-amber-50 text-amber-900 border border-amber-200 dark:bg-amber-950 dark:text-amber-200 dark:border-amber-800">
-              You are currently signed in as <strong>{user?.email}</strong>. This invitation was sent to <strong>{invitation.email}</strong>. Please switch accounts to accept this invitation.
+              {t('invitations.switchAccountWarning', {
+                currentEmail: user?.email || '',
+                targetEmail: invitation.email,
+              })}
             </div>
           )}
         </CardContent>
@@ -153,7 +158,7 @@ export default function InvitationPage() {
                 disabled={acceptMutation.isPending}
                 className="w-full cursor-pointer"
               >
-                {acceptMutation.isPending ? 'Joining Workspace...' : 'Accept & Join Workspace'}
+                {acceptMutation.isPending ? t('invitations.joining') : t('invitations.acceptBtn')}
               </Button>
             ) : (
               <Link
@@ -161,7 +166,7 @@ export default function InvitationPage() {
                 state={{ from: { pathname: `/invitations/${token}` } }}
                 className={cn(buttonVariants({ variant: 'outline' }), 'w-full cursor-pointer')}
               >
-                Sign in with {invitation.email}
+                {t('invitations.signInWith', { email: invitation.email })}
               </Link>
             )
           ) : (
@@ -171,14 +176,14 @@ export default function InvitationPage() {
                 state={{ from: { pathname: `/invitations/${token}` } }}
                 className={cn(buttonVariants({ variant: 'default' }), 'w-full cursor-pointer')}
               >
-                Sign in to Accept
+                {t('invitations.signInToAccept')}
               </Link>
               <Link
                 to="/register"
                 state={{ from: { pathname: `/invitations/${token}` } }}
                 className={cn(buttonVariants({ variant: 'outline' }), 'w-full cursor-pointer')}
               >
-                Create Account
+                {t('auth.createAccount')}
               </Link>
             </div>
           )}
