@@ -169,6 +169,7 @@ export function useTask(taskId?: string) {
     onSuccess: (updated) => {
       queryClient.setQueryData(['task', taskId], updated);
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['task-activities', taskId] });
     },
   });
 
@@ -225,6 +226,7 @@ export function useTaskComments(taskId?: string) {
       queryClient.invalidateQueries({ queryKey: ['comments', taskId] });
       queryClient.invalidateQueries({ queryKey: ['task', taskId] });
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['task-activities', taskId] });
     },
   });
 
@@ -238,6 +240,7 @@ export function useTaskComments(taskId?: string) {
       queryClient.invalidateQueries({ queryKey: ['comments', taskId] });
       queryClient.invalidateQueries({ queryKey: ['task', taskId] });
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['task-activities', taskId] });
     },
   });
 

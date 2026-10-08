@@ -144,3 +144,36 @@ export interface ApiErrorResponse {
     fields?: Record<string, string[]>;
   };
 }
+
+export type ActivityType =
+  | 'TASK_CREATED'
+  | 'TASK_UPDATED'
+  | 'TASK_STATUS_CHANGED'
+  | 'TASK_ASSIGNEE_CHANGED'
+  | 'TASK_DELETED'
+  | 'COMMENT_ADDED'
+  | 'COMMENT_DELETED'
+  | 'ATTACHMENT_ADDED'
+  | 'ATTACHMENT_DELETED'
+  | 'PROJECT_CREATED'
+  | 'PROJECT_UPDATED'
+  | 'MEMBER_JOINED'
+  | 'MEMBER_REMOVED'
+  | 'OWNERSHIP_TRANSFERRED';
+
+export interface Activity {
+  id: string;
+  workspaceId: string;
+  projectId?: string | null;
+  taskId?: string | null;
+  actorId?: string | null;
+  type: ActivityType;
+  metadata?: Record<string, unknown> | null;
+  createdAt: string;
+  actor?: {
+    id: string;
+    name: string;
+    email: string;
+  } | null;
+}
+

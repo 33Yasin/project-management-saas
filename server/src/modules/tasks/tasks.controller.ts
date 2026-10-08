@@ -53,6 +53,7 @@ export class TasksController {
       const task = await tasksService.updateTask({
         taskId,
         workspaceId,
+        actorId: req.session.userId,
         input: req.body,
       });
       res.status(200).json({ task });
@@ -64,7 +65,7 @@ export class TasksController {
   async delete(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const taskId = getParam(req.params.taskId);
-      await tasksService.deleteTask(taskId);
+      await tasksService.deleteTask(taskId, req.session.userId);
       res.status(204).send();
     } catch (error) {
       next(error);
@@ -79,6 +80,7 @@ export class TasksController {
         taskId,
         targetIndex,
         newStatus: status,
+        actorId: req.session.userId,
       });
       res.status(200).json({ task });
     } catch (error) {

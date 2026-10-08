@@ -2,6 +2,7 @@ import prisma from '../../lib/db/prisma';
 import { AppError } from '../../errors/app-error';
 import { ErrorCode } from '../../errors/error-codes';
 import { CreateCommentInput } from './comments.schemas';
+import { activityService } from '../activities/activity.service';
 
 export class CommentsService {
   async listComments(taskId: string) {
@@ -44,6 +45,29 @@ export class CommentsService {
       },
     });
 
+    const task = await prisma.task.findUnique({
+      where: { id: params.taskId },
+      include: {
+        project: {
+          select: { workspaceId: true },
+        },
+      },
+    });
+
+    if (task) {
+      await activityService.recordActivity({
+        workspaceId: task.project.workspaceId,
+        projectId: task.projectId,
+        taskId: task.id,
+        actorId: params.authorId,
+        type: 'COMMENT_ADDED',
+        metadata: {
+          commentId: comment.id,
+          preview: comment.content.slice(0, 50),
+        },
+      });
+    }
+
     return comment;
   }
 
@@ -55,6 +79,8 @@ export class CommentsService {
       include: {
         task: {
           select: {
+            id: true,
+            projectId: true,
             project: {
               select: {
                 workspaceId: true,
@@ -93,6 +119,17 @@ export class CommentsService {
         ErrorCode.WORKSPACE_ACCESS_DENIED
       );
     }
+
+    await activityService.recordActivity({
+      workspaceId: comment.task.project.workspaceId,
+      projectId: comment.task.projectId,
+      taskId: comment.taskId,
+      actorId: userId,
+      type: 'COMMENT_DELETED',
+      metadata: {
+        commentId,
+      },
+    });
 
     await prisma.comment.delete({
       where: { id: commentId },

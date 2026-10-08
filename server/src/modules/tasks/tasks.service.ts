@@ -7,6 +7,7 @@ import {
   UpdateTaskInput,
   TaskListQueryInput,
 } from './tasks.schemas';
+import { activityService } from '../activities/activity.service';
 
 export class TasksService {
   async validateAssignee(workspaceId: string, assigneeId?: string | null): Promise<void> {
@@ -132,6 +133,19 @@ export class TasksService {
       },
     });
 
+    await activityService.recordActivity({
+      workspaceId,
+      projectId,
+      taskId: task.id,
+      actorId: createdById,
+      type: 'TASK_CREATED',
+      metadata: {
+        title: task.title,
+        status: task.status,
+        priority: task.priority,
+      },
+    });
+
     return task;
   }
 
@@ -160,13 +174,23 @@ export class TasksService {
   async updateTask(params: {
     taskId: string;
     workspaceId: string;
+    actorId?: string;
     input: UpdateTaskInput;
   }) {
-    const { taskId, workspaceId, input } = params;
+    const { taskId, workspaceId, actorId, input } = params;
 
     if (input.assigneeId) {
       await this.validateAssignee(workspaceId, input.assigneeId);
     }
+
+    const existingTask = await prisma.task.findUnique({
+      where: { id: taskId },
+      select: {
+        status: true,
+        assigneeId: true,
+        projectId: true,
+      },
+    });
 
     const task = await prisma.task.update({
       where: { id: taskId },
@@ -191,26 +215,108 @@ export class TasksService {
       },
     });
 
+    if (existingTask) {
+      if (input.status !== undefined && input.status !== existingTask.status) {
+        await activityService.recordActivity({
+          workspaceId,
+          projectId: existingTask.projectId,
+          taskId: task.id,
+          actorId,
+          type: 'TASK_STATUS_CHANGED',
+          metadata: {
+            from: existingTask.status,
+            to: task.status,
+          },
+        });
+      }
+
+      if (input.assigneeId !== undefined && input.assigneeId !== existingTask.assigneeId) {
+        await activityService.recordActivity({
+          workspaceId,
+          projectId: existingTask.projectId,
+          taskId: task.id,
+          actorId,
+          type: 'TASK_ASSIGNEE_CHANGED',
+          metadata: {
+            from: existingTask.assigneeId,
+            to: task.assigneeId,
+            assigneeName: task.assignee?.name ?? null,
+          },
+        });
+      }
+
+      const hasOtherChanges =
+        input.title !== undefined ||
+        input.description !== undefined ||
+        input.priority !== undefined ||
+        input.dueDate !== undefined;
+
+      if (hasOtherChanges) {
+        const changedFields = Object.keys(input).filter(
+          (k) => k !== 'status' && k !== 'assigneeId'
+        );
+        await activityService.recordActivity({
+          workspaceId,
+          projectId: existingTask.projectId,
+          taskId: task.id,
+          actorId,
+          type: 'TASK_UPDATED',
+          metadata: {
+            fields: changedFields,
+          },
+        });
+      }
+    }
+
     return task;
   }
 
-  async deleteTask(taskId: string) {
-    await prisma.task.delete({
+  async deleteTask(taskId: string, actorId?: string) {
+    const task = await prisma.task.findUnique({
       where: { id: taskId },
+      include: {
+        project: {
+          select: { workspaceId: true },
+        },
+      },
     });
+
+    if (task) {
+      await activityService.recordActivity({
+        workspaceId: task.project.workspaceId,
+        projectId: task.projectId,
+        taskId: null,
+        actorId,
+        type: 'TASK_DELETED',
+        metadata: {
+          title: task.title,
+        },
+      });
+
+      await prisma.task.delete({
+        where: { id: taskId },
+      });
+    }
   }
 
   async moveTask(params: {
     taskId: string;
     targetIndex: number;
     newStatus?: TaskStatus;
+    actorId?: string;
   }) {
-    const { taskId, targetIndex, newStatus } = params;
+    const { taskId, targetIndex, newStatus, actorId } = params;
 
     return await prisma.$transaction(async (tx) => {
       const task = await tx.task.findUnique({
         where: { id: taskId },
-        select: { id: true, projectId: true, status: true, position: true },
+        select: {
+          id: true,
+          projectId: true,
+          status: true,
+          position: true,
+          project: { select: { workspaceId: true } },
+        },
       });
 
       if (!task) {
@@ -247,6 +353,21 @@ export class TasksService {
             });
           }
         }
+
+        await activityService.recordActivity(
+          {
+            workspaceId: task.project.workspaceId,
+            projectId: task.projectId,
+            taskId,
+            actorId,
+            type: 'TASK_UPDATED',
+            metadata: {
+              reordered: true,
+              position: targetIndex,
+            },
+          },
+          tx
+        );
       } else {
         // Moving across status columns
         const destTasks = await tx.task.findMany({
@@ -299,6 +420,22 @@ export class TasksService {
             });
           }
         }
+
+        await activityService.recordActivity(
+          {
+            workspaceId: task.project.workspaceId,
+            projectId: task.projectId,
+            taskId,
+            actorId,
+            type: 'TASK_STATUS_CHANGED',
+            metadata: {
+              from: currentStatus,
+              to: destinationStatus,
+              position: targetIndex,
+            },
+          },
+          tx
+        );
       }
 
       return await tx.task.findUnique({

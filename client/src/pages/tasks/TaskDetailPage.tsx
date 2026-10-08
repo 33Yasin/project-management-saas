@@ -24,6 +24,7 @@ import {
   MessageSquare,
   AlertTriangle,
 } from 'lucide-react';
+import { TaskActivityTimeline } from '@/features/activities/TaskActivityTimeline';
 
 export default function TaskDetailPage() {
   const { workspaceId: paramWsId, taskId } = useParams<{ workspaceId?: string; taskId: string }>();
@@ -222,6 +223,9 @@ export default function TaskDetailPage() {
               </form>
             </CardContent>
           </Card>
+
+          {/* Activity History Timeline */}
+          <TaskActivityTimeline taskId={task.id} />
         </div>
 
         {/* Right 1 Col: Properties sidebar */}
