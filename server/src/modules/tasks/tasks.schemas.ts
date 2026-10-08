@@ -64,9 +64,9 @@ export const taskListQuerySchema = z.object({
   priority: taskPriorityEnum.optional(),
   assigneeId: z.string().trim().optional(),
   sort: z
-    .enum(['createdAt', 'dueDate', 'priority', 'status', 'title'], {
+    .enum(['createdAt', 'dueDate', 'priority', 'status', 'title', 'position'], {
       message:
-        "Sort must be one of: 'createdAt', 'dueDate', 'priority', 'status', 'title'",
+        "Sort must be one of: 'createdAt', 'dueDate', 'priority', 'status', 'title', 'position'",
     })
     .default('createdAt'),
   order: z.enum(['asc', 'desc']).default('desc'),
@@ -83,6 +83,13 @@ export const taskIdParamSchema = z.object({
   taskId: z.string().trim().min(1, 'Task ID is required'),
 });
 
+export const moveTaskSchema = z.object({
+  status: taskStatusEnum.optional(),
+  targetIndex: z.coerce.number().int().min(0, 'targetIndex must be at least 0'),
+});
+
 export type CreateTaskInput = z.infer<typeof createTaskSchema>;
 export type UpdateTaskInput = z.infer<typeof updateTaskSchema>;
 export type TaskListQueryInput = z.infer<typeof taskListQuerySchema>;
+export type MoveTaskInput = z.infer<typeof moveTaskSchema>;
+

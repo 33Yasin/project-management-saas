@@ -108,6 +108,7 @@ model Task {
   description String?
   status      TaskStatus   @default(TODO)
   priority    TaskPriority @default(MEDIUM)
+  position    Int          @default(0)
   assigneeId  String?
   createdById String
   dueDate     DateTime?
@@ -121,6 +122,7 @@ model Task {
 
   @@index([projectId])
   @@index([projectId, status])
+  @@index([projectId, status, position])
   @@index([projectId, priority])
   @@index([assigneeId])
   @@index([projectId, dueDate])

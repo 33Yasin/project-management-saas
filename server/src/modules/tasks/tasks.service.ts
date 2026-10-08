@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { Prisma, TaskStatus } from '@prisma/client';
 import prisma from '../../lib/db/prisma';
 import { AppError } from '../../errors/app-error';
 import { ErrorCode } from '../../errors/error-codes';
@@ -100,6 +100,13 @@ export class TasksService {
 
     await this.validateAssignee(workspaceId, input.assigneeId);
 
+    const maxPositionTask = await prisma.task.findFirst({
+      where: { projectId, status: input.status },
+      orderBy: { position: 'desc' },
+      select: { position: true },
+    });
+    const position = maxPositionTask ? maxPositionTask.position + 1 : 0;
+
     const task = await prisma.task.create({
       data: {
         projectId,
@@ -108,6 +115,7 @@ export class TasksService {
         description: input.description ?? null,
         status: input.status,
         priority: input.priority,
+        position,
         assigneeId: input.assigneeId ?? null,
         dueDate: input.dueDate ?? null,
       },
@@ -189,6 +197,124 @@ export class TasksService {
   async deleteTask(taskId: string) {
     await prisma.task.delete({
       where: { id: taskId },
+    });
+  }
+
+  async moveTask(params: {
+    taskId: string;
+    targetIndex: number;
+    newStatus?: TaskStatus;
+  }) {
+    const { taskId, targetIndex, newStatus } = params;
+
+    return await prisma.$transaction(async (tx) => {
+      const task = await tx.task.findUnique({
+        where: { id: taskId },
+        select: { id: true, projectId: true, status: true, position: true },
+      });
+
+      if (!task) {
+        throw AppError.notFound('Task not found.', ErrorCode.TASK_NOT_FOUND);
+      }
+
+      const currentStatus = task.status;
+      const destinationStatus = newStatus || currentStatus;
+
+      if (currentStatus === destinationStatus) {
+        // Reordering within the same status column
+        const columnTasks = await tx.task.findMany({
+          where: {
+            projectId: task.projectId,
+            status: currentStatus,
+            id: { not: taskId },
+          },
+          orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
+          select: { id: true, position: true },
+        });
+
+        const clampedIndex = Math.min(Math.max(0, targetIndex), columnTasks.length);
+        const newOrder = [
+          ...columnTasks.slice(0, clampedIndex),
+          { id: taskId, position: task.position },
+          ...columnTasks.slice(clampedIndex),
+        ];
+
+        for (let i = 0; i < newOrder.length; i++) {
+          if (newOrder[i].position !== i || newOrder[i].id === taskId) {
+            await tx.task.update({
+              where: { id: newOrder[i].id },
+              data: { position: i },
+            });
+          }
+        }
+      } else {
+        // Moving across status columns
+        const destTasks = await tx.task.findMany({
+          where: {
+            projectId: task.projectId,
+            status: destinationStatus,
+            id: { not: taskId },
+          },
+          orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
+          select: { id: true, position: true },
+        });
+
+        const clampedIndex = Math.min(Math.max(0, targetIndex), destTasks.length);
+        const newDestOrder = [
+          ...destTasks.slice(0, clampedIndex),
+          { id: taskId, position: -1 },
+          ...destTasks.slice(clampedIndex),
+        ];
+
+        for (let i = 0; i < newDestOrder.length; i++) {
+          if (newDestOrder[i].id === taskId) {
+            await tx.task.update({
+              where: { id: taskId },
+              data: { status: destinationStatus, position: i },
+            });
+          } else if (newDestOrder[i].position !== i) {
+            await tx.task.update({
+              where: { id: newDestOrder[i].id },
+              data: { position: i },
+            });
+          }
+        }
+
+        // Normalize source column tasks
+        const sourceTasks = await tx.task.findMany({
+          where: {
+            projectId: task.projectId,
+            status: currentStatus,
+            id: { not: taskId },
+          },
+          orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
+          select: { id: true, position: true },
+        });
+
+        for (let i = 0; i < sourceTasks.length; i++) {
+          if (sourceTasks[i].position !== i) {
+            await tx.task.update({
+              where: { id: sourceTasks[i].id },
+              data: { position: i },
+            });
+          }
+        }
+      }
+
+      return await tx.task.findUnique({
+        where: { id: taskId },
+        include: {
+          assignee: {
+            select: { id: true, name: true, email: true },
+          },
+          createdBy: {
+            select: { id: true, name: true, email: true },
+          },
+          _count: {
+            select: { comments: true },
+          },
+        },
+      });
     });
   }
 }

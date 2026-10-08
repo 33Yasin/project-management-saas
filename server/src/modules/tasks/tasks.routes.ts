@@ -9,6 +9,7 @@ import {
   updateTaskSchema,
   taskListQuerySchema,
   taskIdParamSchema,
+  moveTaskSchema,
 } from './tasks.schemas';
 import { projectIdParamSchema } from '../projects/projects.schemas';
 import { taskCommentsRouter } from '../comments/comments.routes';
@@ -56,6 +57,15 @@ tasksRouter.patch(
   requireTaskAccess,
   (req, res, next) => {
     tasksController.update(req, res, next);
+  }
+);
+
+tasksRouter.patch(
+  '/:taskId/move',
+  validate({ params: taskIdParamSchema, body: moveTaskSchema }),
+  requireTaskAccess,
+  (req, res, next) => {
+    tasksController.move(req, res, next);
   }
 );
 

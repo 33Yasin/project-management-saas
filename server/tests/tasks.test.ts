@@ -403,4 +403,168 @@ describe('Tasks Integration Tests', () => {
       expect(dbComment).toBeNull();
     });
   });
+
+  describe('PATCH /api/tasks/:taskId/move', () => {
+    it('should validate targetIndex and reject negative numbers (400)', async () => {
+      const { projectId, owner } = await setupWorkspaceAndProject();
+
+      const createRes = await request(app)
+        .post(`/api/projects/${projectId}/tasks`)
+        .set('Cookie', owner.cookie)
+        .send({ title: 'Task to Move' });
+
+      const taskId = createRes.body.task.id;
+
+      const res = await request(app)
+        .patch(`/api/tasks/${taskId}/move`)
+        .set('Cookie', owner.cookie)
+        .send({ targetIndex: -1 });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    });
+
+    it('should return 404 for outsider attempting to move task', async () => {
+      const { projectId, owner, outsider } = await setupWorkspaceAndProject();
+
+      const createRes = await request(app)
+        .post(`/api/projects/${projectId}/tasks`)
+        .set('Cookie', owner.cookie)
+        .send({ title: 'Task to Move' });
+
+      const taskId = createRes.body.task.id;
+
+      const res = await request(app)
+        .patch(`/api/tasks/${taskId}/move`)
+        .set('Cookie', outsider.cookie)
+        .send({ targetIndex: 0 });
+
+      expect(res.status).toBe(404);
+      expect(res.body.error.code).toBe('TASK_NOT_FOUND');
+    });
+
+    it('should reorder tasks within the same column and update positions atomically', async () => {
+      const { projectId, member } = await setupWorkspaceAndProject();
+
+      // Create 3 tasks in TODO (should get positions 0, 1, 2)
+      const t1 = await request(app)
+        .post(`/api/projects/${projectId}/tasks`)
+        .set('Cookie', member.cookie)
+        .send({ title: 'Task 1', status: 'TODO' });
+
+      const t2 = await request(app)
+        .post(`/api/projects/${projectId}/tasks`)
+        .set('Cookie', member.cookie)
+        .send({ title: 'Task 2', status: 'TODO' });
+
+      const t3 = await request(app)
+        .post(`/api/projects/${projectId}/tasks`)
+        .set('Cookie', member.cookie)
+        .send({ title: 'Task 3', status: 'TODO' });
+
+      const id1 = t1.body.task.id;
+      const id2 = t2.body.task.id;
+      const id3 = t3.body.task.id;
+
+      // Move Task 3 to targetIndex 0
+      const moveRes = await request(app)
+        .patch(`/api/tasks/${id3}/move`)
+        .set('Cookie', member.cookie)
+        .send({ targetIndex: 0 });
+
+      expect(moveRes.status).toBe(200);
+      expect(moveRes.body.task.id).toBe(id3);
+
+      // Verify positions in database
+      const dbTasks = await prisma.task.findMany({
+        where: { projectId, status: 'TODO' },
+        orderBy: { position: 'asc' },
+      });
+
+      expect(dbTasks.map((t) => t.id)).toEqual([id3, id1, id2]);
+      expect(dbTasks.map((t) => t.position)).toEqual([0, 1, 2]);
+    });
+
+    it('should move task across columns, update status, and normalize source and destination positions', async () => {
+      const { projectId, member } = await setupWorkspaceAndProject();
+
+      // Create 2 TODO tasks
+      const todo1 = await request(app)
+        .post(`/api/projects/${projectId}/tasks`)
+        .set('Cookie', member.cookie)
+        .send({ title: 'Todo 1', status: 'TODO' });
+
+      const todo2 = await request(app)
+        .post(`/api/projects/${projectId}/tasks`)
+        .set('Cookie', member.cookie)
+        .send({ title: 'Todo 2', status: 'TODO' });
+
+      // Create 1 IN_PROGRESS task
+      const inProg1 = await request(app)
+        .post(`/api/projects/${projectId}/tasks`)
+        .set('Cookie', member.cookie)
+        .send({ title: 'In Progress 1', status: 'IN_PROGRESS' });
+
+      const idTodo1 = todo1.body.task.id;
+      const idTodo2 = todo2.body.task.id;
+      const idInProg1 = inProg1.body.task.id;
+
+      // Move Todo 1 to IN_PROGRESS at targetIndex 0
+      const moveRes = await request(app)
+        .patch(`/api/tasks/${idTodo1}/move`)
+        .set('Cookie', member.cookie)
+        .send({ status: 'IN_PROGRESS', targetIndex: 0 });
+
+      expect(moveRes.status).toBe(200);
+      expect(moveRes.body.task.status).toBe('IN_PROGRESS');
+
+      // Check destination column (IN_PROGRESS)
+      const destTasks = await prisma.task.findMany({
+        where: { projectId, status: 'IN_PROGRESS' },
+        orderBy: { position: 'asc' },
+      });
+      expect(destTasks.map((t) => t.id)).toEqual([idTodo1, idInProg1]);
+      expect(destTasks.map((t) => t.position)).toEqual([0, 1]);
+
+      // Check source column (TODO): Todo 2 normalized to position 0
+      const sourceTasks = await prisma.task.findMany({
+        where: { projectId, status: 'TODO' },
+        orderBy: { position: 'asc' },
+      });
+      expect(sourceTasks.map((t) => t.id)).toEqual([idTodo2]);
+      expect(sourceTasks[0].position).toBe(0);
+    });
+
+    it('should clamp targetIndex if greater than column length', async () => {
+      const { projectId, member } = await setupWorkspaceAndProject();
+
+      const t1 = await request(app)
+        .post(`/api/projects/${projectId}/tasks`)
+        .set('Cookie', member.cookie)
+        .send({ title: 'Task A', status: 'TODO' });
+
+      const t2 = await request(app)
+        .post(`/api/projects/${projectId}/tasks`)
+        .set('Cookie', member.cookie)
+        .send({ title: 'Task B', status: 'TODO' });
+
+      const id1 = t1.body.task.id;
+      const id2 = t2.body.task.id;
+
+      // Move Task A to large targetIndex 999
+      const moveRes = await request(app)
+        .patch(`/api/tasks/${id1}/move`)
+        .set('Cookie', member.cookie)
+        .send({ targetIndex: 999 });
+
+      expect(moveRes.status).toBe(200);
+
+      const dbTasks = await prisma.task.findMany({
+        where: { projectId, status: 'TODO' },
+        orderBy: { position: 'asc' },
+      });
+      expect(dbTasks.map((t) => t.id)).toEqual([id2, id1]);
+      expect(dbTasks.map((t) => t.position)).toEqual([0, 1]);
+    });
+  });
 });

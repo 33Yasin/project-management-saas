@@ -70,6 +70,21 @@ export class TasksController {
       next(error);
     }
   }
+
+  async move(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const taskId = getParam(req.params.taskId);
+      const { status, targetIndex } = req.body;
+      const task = await tasksService.moveTask({
+        taskId,
+        targetIndex,
+        newStatus: status,
+      });
+      res.status(200).json({ task });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const tasksController = new TasksController();
