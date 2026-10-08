@@ -2,6 +2,8 @@ import crypto from 'crypto';
 import prisma from '../../lib/db/prisma';
 import { AppError } from '../../errors/app-error';
 import { ErrorCode } from '../../errors/error-codes';
+import { emailService } from '../../lib/email/email.service';
+import { logger } from '../../lib/logger';
 
 export class InvitationsService {
   private hashToken(token: string): string {
@@ -101,6 +103,38 @@ export class InvitationsService {
         createdAt: true,
       },
     });
+
+    // Query inviter and workspace metadata to compose personalized invitation email
+    const [inviter, workspace] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: params.invitedById },
+        select: { name: true },
+      }),
+      prisma.workspace.findUnique({
+        where: { id: params.workspaceId },
+        select: { name: true },
+      }),
+    ]);
+
+    const appUrl = process.env.APP_URL || process.env.CLIENT_ORIGIN || 'http://localhost:5173';
+    const inviteUrl = `${appUrl}/invitations/${rawToken}`;
+
+    // Deliver email asynchronously outside of DB transaction; log failures without leaking details
+    try {
+      await emailService.sendInvitationEmail({
+        to: normalizedEmail,
+        inviterName: inviter?.name || 'A team member',
+        workspaceName: workspace?.name || 'their workspace',
+        inviteUrl,
+        role: params.role,
+        expiresAt,
+      });
+    } catch (err) {
+      logger.error('Failed to deliver invitation email', {
+        err: err instanceof Error ? err.message : String(err),
+        recipient: normalizedEmail,
+      });
+    }
 
     return {
       ...invitation,
