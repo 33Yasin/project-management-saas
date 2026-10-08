@@ -4,6 +4,7 @@ import { render, type RenderOptions } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, type MemoryRouterProps } from 'react-router-dom';
 import { ThemeProvider } from '@/lib/theme';
+import { LanguageProvider } from '@/lib/i18n/language-context';
 
 export function createTestQueryClient() {
   return new QueryClient({
@@ -36,7 +37,9 @@ export function renderWithProviders(
     return (
       <QueryClientProvider client={queryClient}>
         <ThemeProvider defaultTheme="light">
-          <MemoryRouter initialEntries={initialEntries}>{children}</MemoryRouter>
+          <LanguageProvider defaultLanguage="en">
+            <MemoryRouter initialEntries={initialEntries}>{children}</MemoryRouter>
+          </LanguageProvider>
         </ThemeProvider>
       </QueryClientProvider>
     );

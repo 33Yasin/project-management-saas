@@ -11,6 +11,8 @@ import { useWorkspaces, useWorkspace } from '@/features/workspaces/use-workspace
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
+import { LanguageToggle } from '@/components/common/LanguageToggle';
+import { useLanguage } from '@/lib/i18n/language-context';
 import { NotificationBell } from '@/features/notifications/NotificationBell';
 import {
   Dialog,
@@ -73,22 +75,24 @@ export default function AppLayout() {
     navigate('/login', { replace: true });
   };
 
+  const { t } = useLanguage();
+
   const navItems = activeWorkspace
     ? [
         {
-          name: 'Projects',
+          name: t('nav.projects'),
           path: `/workspaces/${activeWorkspace.id}/projects`,
           icon: FolderKanban,
         },
         {
-          name: 'Members',
+          name: t('nav.members'),
           path: `/workspaces/${activeWorkspace.id}/members`,
           icon: Users,
         },
         ...(activeWorkspace.role === 'OWNER' || activeWorkspace.role === 'ADMIN'
           ? [
               {
-                name: 'Settings',
+                name: t('nav.settings'),
                 path: `/workspaces/${activeWorkspace.id}/settings`,
                 icon: Settings,
               },
@@ -97,7 +101,7 @@ export default function AppLayout() {
       ]
     : [
         {
-          name: 'All Workspaces',
+          name: t('nav.workspaces'),
           path: '/workspaces',
           icon: Building2,
         },
@@ -278,6 +282,7 @@ export default function AppLayout() {
               </Badge>
             )}
             <NotificationBell />
+            <LanguageToggle />
             <ThemeToggle />
           </div>
         </header>

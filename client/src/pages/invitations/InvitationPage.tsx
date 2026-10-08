@@ -6,6 +6,7 @@ import type { InvitationPreview, WorkspaceMember } from '@/types/api';
 import { useAuth } from '@/features/auth/use-auth';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
+import { LanguageToggle } from '@/components/common/LanguageToggle';
 import { cn } from '@/lib/utils';
 import {
   Card,
@@ -97,7 +98,8 @@ export default function InvitationPage() {
 
   return (
     <div className="min-h-screen relative flex items-center justify-center bg-muted/40 p-4">
-      <div className="absolute top-4 right-4">
+      <div className="absolute top-4 right-4 flex items-center gap-2">
+        <LanguageToggle />
         <ThemeToggle />
       </div>
       <Card className="w-full max-w-md shadow-md border-border/80">
