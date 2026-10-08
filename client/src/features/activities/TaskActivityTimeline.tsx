@@ -148,6 +148,25 @@ function renderActivityDescription(activity: Activity) {
         </span>
       );
 
+    case 'ATTACHMENT_ADDED':
+      return (
+        <span>
+          <strong className="font-medium text-foreground">{actorName}</strong> added an attachment
+          {meta.fileName ? (
+            <span className="font-semibold text-foreground ml-1">
+              &ldquo;{String(meta.fileName)}&rdquo;
+            </span>
+          ) : null}
+        </span>
+      );
+
+    case 'ATTACHMENT_DELETED':
+      return (
+        <span>
+          <strong className="font-medium text-foreground">{actorName}</strong> removed an attachment
+        </span>
+      );
+
     default:
       return (
         <span>

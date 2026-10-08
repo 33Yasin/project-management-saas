@@ -56,6 +56,7 @@ export function KanbanColumn({
   return (
     <div
       ref={setNodeRef}
+      data-testid={`kanban-column-${status.toLowerCase()}`}
       className={cn(
         'flex flex-col flex-1 min-w-[280px] max-w-[380px] bg-muted/40 rounded-xl border border-border/80 border-t-2 p-3 transition-colors',
         getStatusAccent(status),

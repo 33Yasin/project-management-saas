@@ -35,3 +35,7 @@ skills-lock.json
 uploads/
 server/uploads/
 
+# Playwright
+test-results/
+playwright-report/
+

@@ -11,7 +11,11 @@
     "start": "node server/dist/server.js",
     "test:server": "npm test --prefix server",
     "test:client": "npm test --prefix client",
+    "test:e2e": "playwright test",
     "test": "npm test --prefix server",
-    "test:all": "npm run test:server && npm run test:client"
+    "test:all": "npm run test:server && npm run test:client && npm run test:e2e"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.0"
   }
 }

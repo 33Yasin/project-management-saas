@@ -12,8 +12,7 @@
     <script>
       (function() {
         try {
-          var storageKey = 'vite-ui-theme';
-          var theme = localStorage.getItem(storageKey) || 'system';
+          var theme = localStorage.getItem('agora-theme') || localStorage.getItem('vite-ui-theme') || 'system';
           var isDark =
             theme === 'dark' ||
             (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);

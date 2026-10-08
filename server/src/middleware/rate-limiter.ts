@@ -28,7 +28,7 @@ export const generalRateLimiter = rateLimit({
  */
 export const authRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 15,
+  limit: process.env.NODE_ENV === 'production' ? 15 : 1000,
   standardHeaders: true,
   legacyHeaders: false,
   skip: () => isTest,
@@ -43,11 +43,11 @@ export const authRateLimiter = rateLimit({
 
 /**
  * Invitation rate limiter — prevents invitation spam and token guessing.
- * 30 attempts per 15 minutes per IP.
+ * 30 attempts per 15 minutes per IP in production.
  */
 export const invitationRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 30,
+  limit: process.env.NODE_ENV === 'production' ? 30 : 1000,
   standardHeaders: true,
   legacyHeaders: false,
   skip: () => isTest,

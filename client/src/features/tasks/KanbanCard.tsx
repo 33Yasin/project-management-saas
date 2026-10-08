@@ -56,6 +56,7 @@ export function KanbanCard({ task, workspaceId, projectId, isOverlay = false }: 
     <div
       ref={setNodeRef}
       style={style}
+      data-testid="kanban-card"
       className={cn(
         'group relative bg-card text-card-foreground border border-border/80 rounded-lg p-3 shadow-2xs hover:shadow-sm hover:border-primary/40 transition-all select-none',
         isDragging && 'opacity-30 border-dashed border-primary',
