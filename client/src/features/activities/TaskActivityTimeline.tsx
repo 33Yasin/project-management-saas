@@ -62,9 +62,21 @@ function formatStatus(status: unknown): string {
   }
 }
 
+interface ActivityMetadata {
+  from?: string;
+  to?: string;
+  assigneeName?: string;
+  reordered?: boolean;
+  fields?: string[];
+  preview?: string;
+  commentId?: string;
+  title?: string;
+  [key: string]: unknown;
+}
+
 function renderActivityDescription(activity: Activity) {
   const actorName = activity.actor?.name || 'Someone';
-  const meta = (activity.metadata as Record<string, any>) || {};
+  const meta = (activity.metadata as ActivityMetadata) || {};
 
   switch (activity.type) {
     case 'TASK_CREATED':
