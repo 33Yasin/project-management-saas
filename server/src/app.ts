@@ -14,6 +14,7 @@ import projectsRouter from './modules/projects/projects.routes';
 import tasksRouter from './modules/tasks/tasks.routes';
 import commentsRouter from './modules/comments/comments.routes';
 import attachmentsRouter from './modules/attachments/attachment.routes';
+import notificationsRouter from './modules/notifications/notification.routes';
 import { errorHandler } from './middleware/error-handler';
 
 const app = express();
@@ -77,6 +78,7 @@ app.use('/api/projects', projectsRouter);
 app.use('/api/tasks', tasksRouter);
 app.use('/api/comments', commentsRouter);
 app.use('/api/attachments', attachmentsRouter);
+app.use('/api/notifications', notificationsRouter);
 
 // Serve frontend SPA in production if client/dist exists
 const clientDistPath = path.resolve(__dirname, '../../client/dist');

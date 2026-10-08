@@ -11,6 +11,7 @@ import { useWorkspaces, useWorkspace } from '@/features/workspaces/use-workspace
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
+import { NotificationBell } from '@/features/notifications/NotificationBell';
 import {
   Dialog,
   DialogHeader,
@@ -276,6 +277,7 @@ export default function AppLayout() {
                 {activeWorkspace.role}
               </Badge>
             )}
+            <NotificationBell />
             <ThemeToggle />
           </div>
         </header>

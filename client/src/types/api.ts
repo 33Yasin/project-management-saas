@@ -193,3 +193,31 @@ export interface Activity {
   } | null;
 }
 
+export type NotificationType =
+  | 'TASK_ASSIGNED'
+  | 'TASK_STATUS_CHANGED'
+  | 'COMMENT_ADDED'
+  | 'WORKSPACE_INVITATION'
+  | 'OWNERSHIP_TRANSFERRED'
+  | 'ROLE_UPDATED';
+
+export interface Notification {
+  id: string;
+  userId: string;
+  workspaceId: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  entityType?: string | null;
+  entityId?: string | null;
+  readAt?: string | null;
+  createdAt: string;
+}
+
+export interface NotificationsResponse {
+  items: Notification[];
+  unreadCount: number;
+  pagination: Pagination;
+}
+
+

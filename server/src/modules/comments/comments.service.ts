@@ -3,6 +3,7 @@ import { AppError } from '../../errors/app-error';
 import { ErrorCode } from '../../errors/error-codes';
 import { CreateCommentInput } from './comments.schemas';
 import { activityService } from '../activities/activity.service';
+import { notificationService } from '../notifications/notification.service';
 
 export class CommentsService {
   async listComments(taskId: string) {
@@ -66,6 +67,28 @@ export class CommentsService {
           preview: comment.content.slice(0, 50),
         },
       });
+
+      // Notify task creator and assignee if different from comment author
+      const recipients = new Set<string>();
+      if (task.createdById && task.createdById !== params.authorId) {
+        recipients.add(task.createdById);
+      }
+      if (task.assigneeId && task.assigneeId !== params.authorId) {
+        recipients.add(task.assigneeId);
+      }
+
+      for (const recipientId of recipients) {
+        await notificationService.createNotification({
+          userId: recipientId,
+          workspaceId: task.project.workspaceId,
+          type: 'COMMENT_ADDED',
+          title: 'New Comment',
+          message: `${comment.author.name} commented on '${task.title}'`,
+          entityType: 'TASK',
+          entityId: task.id,
+          actorId: params.authorId,
+        });
+      }
     }
 
     return comment;

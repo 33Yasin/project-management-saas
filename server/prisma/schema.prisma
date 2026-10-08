@@ -44,6 +44,7 @@ model User {
   comments        Comment[]
   activities      Activity[]
   attachments     Attachment[]
+  notifications   Notification[]
 }
 
 model Workspace {
@@ -54,8 +55,9 @@ model Workspace {
 
   members     WorkspaceMember[]
   invitations Invitation[]
-  projects    Project[]
-  activities  Activity[]
+  projects      Project[]
+  activities    Activity[]
+  notifications Notification[]
 }
 
 model WorkspaceMember {
@@ -209,4 +211,34 @@ model Session {
   @@index([expire], map: "IDX_session_expire")
   @@map("session")
 }
+
+enum NotificationType {
+  TASK_ASSIGNED
+  TASK_STATUS_CHANGED
+  COMMENT_ADDED
+  WORKSPACE_INVITATION
+  OWNERSHIP_TRANSFERRED
+  ROLE_UPDATED
+}
+
+model Notification {
+  id          String           @id @default(uuid())
+  userId      String
+  workspaceId String
+  type        NotificationType
+  title       String
+  message     String
+  entityType  String?
+  entityId    String?
+  readAt      DateTime?
+  createdAt   DateTime         @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt, createdAt])
+  @@index([userId, createdAt])
+  @@index([workspaceId])
+}
+
 

@@ -8,6 +8,7 @@ import {
   TaskListQueryInput,
 } from './tasks.schemas';
 import { activityService } from '../activities/activity.service';
+import { notificationService } from '../notifications/notification.service';
 
 export class TasksService {
   async validateAssignee(workspaceId: string, assigneeId?: string | null): Promise<void> {
@@ -146,6 +147,19 @@ export class TasksService {
       },
     });
 
+    if (task.assigneeId && task.assigneeId !== createdById) {
+      await notificationService.createNotification({
+        userId: task.assigneeId,
+        workspaceId,
+        type: 'TASK_ASSIGNED',
+        title: 'Task Assigned',
+        message: `You were assigned to task '${task.title}'`,
+        entityType: 'TASK',
+        entityId: task.id,
+        actorId: createdById,
+      });
+    }
+
     return task;
   }
 
@@ -243,6 +257,19 @@ export class TasksService {
             assigneeName: task.assignee?.name ?? null,
           },
         });
+
+        if (input.assigneeId && input.assigneeId !== actorId) {
+          await notificationService.createNotification({
+            userId: input.assigneeId,
+            workspaceId,
+            type: 'TASK_ASSIGNED',
+            title: 'Task Assigned',
+            message: `You were assigned to task '${task.title}'`,
+            entityType: 'TASK',
+            entityId: task.id,
+            actorId,
+          });
+        }
       }
 
       const hasOtherChanges =

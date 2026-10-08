@@ -2,6 +2,7 @@ import { WorkspaceRole } from '@prisma/client';
 import prisma from '../../lib/db/prisma';
 import { AppError } from '../../errors/app-error';
 import { ErrorCode } from '../../errors/error-codes';
+import { notificationService } from '../notifications/notification.service';
 
 export class MembersService {
   async listMembers(workspaceId: string) {
@@ -76,6 +77,17 @@ export class MembersService {
           },
         },
       },
+    });
+
+    await notificationService.createNotification({
+      userId: targetMember.userId,
+      workspaceId,
+      type: 'ROLE_UPDATED',
+      title: 'Role Updated',
+      message: `Your workspace role was updated to ${newRole}`,
+      entityType: 'WORKSPACE',
+      entityId: workspaceId,
+      actorId,
     });
 
     return updated;
