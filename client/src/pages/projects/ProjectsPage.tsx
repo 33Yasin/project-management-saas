@@ -31,6 +31,8 @@ export default function ProjectsPage() {
   const { projects, isLoading, createProject, isCreating } = useProjects(workspaceId);
   const { t } = useLanguage();
 
+  const canCreateProject = workspace?.role === 'OWNER' || workspace?.role === 'ADMIN';
+
   const [createOpen, setCreateOpen] = useState(false);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -63,10 +65,12 @@ export default function ProjectsPage() {
             {t('projects.subtitle', { workspace: workspace?.name || '' })}
           </p>
         </div>
-        <Button onClick={() => setCreateOpen(true)} className="cursor-pointer">
-          <Plus className="size-4 mr-1.5" />
-          {t('projects.newProject')}
-        </Button>
+        {canCreateProject && (
+          <Button onClick={() => setCreateOpen(true)} className="cursor-pointer">
+            <Plus className="size-4 mr-1.5" />
+            {t('projects.newProject')}
+          </Button>
+        )}
       </div>
 
       {isLoading ? (
@@ -82,10 +86,12 @@ export default function ProjectsPage() {
           <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-4">
             {t('projects.noProjectsDesc')}
           </p>
-          <Button onClick={() => setCreateOpen(true)} className="cursor-pointer">
-            <Plus className="size-4 mr-1.5" />
-            {t('projects.createFirstProject')}
-          </Button>
+          {canCreateProject && (
+            <Button onClick={() => setCreateOpen(true)} className="cursor-pointer">
+              <Plus className="size-4 mr-1.5" />
+              {t('projects.createFirstProject')}
+            </Button>
+          )}
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

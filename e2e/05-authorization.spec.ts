@@ -56,6 +56,9 @@ test.describe('Journey 5: Role-based Authorization Enforcement (UI & API)', () =
     await memberPage.waitForURL(/\/workspaces\/[^/]+\/projects/);
 
     // 4. Verify UI restrictions for MEMBER
+    // MEMBER should NOT have access to "New Project" button
+    await expect(memberPage.getByRole('button', { name: /new project/i })).toHaveCount(0);
+
     // MEMBER should NOT have access to Workspace Settings link in sidebar
     await expect(memberPage.getByRole('link', { name: /^settings$/i })).toHaveCount(0);
 
@@ -66,7 +69,24 @@ test.describe('Journey 5: Role-based Authorization Enforcement (UI & API)', () =
     // MEMBER should NOT see the "Invite Member" button
     await expect(memberPage.getByRole('button', { name: /invite member/i })).toHaveCount(0);
 
-    // 5. Test direct API authorization: MEMBER attempts to DELETE workspace directly
+    // 5. Test direct API authorization: MEMBER attempts to CREATE a project directly
+    const createProjectApiResult = await memberPage.evaluate(async (wsId) => {
+      const res = await fetch(`/api/workspaces/${wsId}/projects`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: 'Unauthorized Project' }),
+      });
+      const data = await res.json().catch(() => ({}));
+      return { status: res.status, data };
+    }, workspaceId);
+
+    // Verify server rejects with 403 Forbidden and WORKSPACE_ACCESS_DENIED
+    expect(createProjectApiResult.status).toBe(403);
+    expect(createProjectApiResult.data.error.code).toBe('WORKSPACE_ACCESS_DENIED');
+
+    // 6. Test direct API authorization: MEMBER attempts to DELETE workspace directly
     const apiResult = await memberPage.evaluate(async (wsId) => {
       const res = await fetch(`/api/workspaces/${wsId}`, {
         method: 'DELETE',

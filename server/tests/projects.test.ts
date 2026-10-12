@@ -113,7 +113,7 @@ describe('Projects Integration Tests', () => {
       expect(res.body.error.code).toBe('WORKSPACE_NOT_FOUND');
     });
 
-    it('should allow MEMBER to create project in workspace (201)', async () => {
+    it('should reject MEMBER from creating project in workspace (403)', async () => {
       const { workspaceId, member } = await setupWorkspaceWithMembers();
 
       const res = await request(app)
@@ -124,23 +124,11 @@ describe('Projects Integration Tests', () => {
           description: 'Revamping the user interface for iOS and Android',
         });
 
-      expect(res.status).toBe(201);
-      expect(res.body.project.name).toBe('Mobile App Redesign');
-      expect(res.body.project.description).toBe(
-        'Revamping the user interface for iOS and Android'
-      );
-      expect(res.body.project.workspaceId).toBe(workspaceId);
-      expect(res.body.project._count.tasks).toBe(0);
-
-      // Verify DB
-      const dbProject = await prisma.project.findUnique({
-        where: { id: res.body.project.id },
-      });
-      expect(dbProject).toBeDefined();
-      expect(dbProject?.name).toBe('Mobile App Redesign');
+      expect(res.status).toBe(403);
+      expect(res.body.error.code).toBe('WORKSPACE_ACCESS_DENIED');
     });
 
-    it('should allow OWNER and ADMIN to create projects', async () => {
+    it('should allow OWNER and ADMIN to create projects (201)', async () => {
       const { workspaceId, owner, admin } = await setupWorkspaceWithMembers();
 
       const ownerRes = await request(app)
@@ -148,12 +136,14 @@ describe('Projects Integration Tests', () => {
         .set('Cookie', owner.cookie)
         .send({ name: 'Owner Project' });
       expect(ownerRes.status).toBe(201);
+      expect(ownerRes.body.project.name).toBe('Owner Project');
 
       const adminRes = await request(app)
         .post(`/api/workspaces/${workspaceId}/projects`)
         .set('Cookie', admin.cookie)
         .send({ name: 'Admin Project' });
       expect(adminRes.status).toBe(201);
+      expect(adminRes.body.project.name).toBe('Admin Project');
     });
   });
 
@@ -175,19 +165,19 @@ describe('Projects Integration Tests', () => {
       expect(res.body.error.code).toBe('WORKSPACE_NOT_FOUND');
     });
 
-    it('should list only projects of the target workspace', async () => {
-      const { workspaceId, otherWorkspaceId, member, outsider } =
+    it('should list only projects of the target workspace for members', async () => {
+      const { workspaceId, otherWorkspaceId, owner, member, outsider } =
         await setupWorkspaceWithMembers();
 
-      // Create 2 projects in primary workspace
+      // Create 2 projects in primary workspace by OWNER
       await request(app)
         .post(`/api/workspaces/${workspaceId}/projects`)
-        .set('Cookie', member.cookie)
+        .set('Cookie', owner.cookie)
         .send({ name: 'Project 1' });
 
       await request(app)
         .post(`/api/workspaces/${workspaceId}/projects`)
-        .set('Cookie', member.cookie)
+        .set('Cookie', owner.cookie)
         .send({ name: 'Project 2' });
 
       // Create 1 project in outsider's workspace
@@ -306,7 +296,7 @@ describe('Projects Integration Tests', () => {
       expect(res.body.error.code).toBe('PROJECT_NOT_FOUND');
     });
 
-    it('should allow MEMBER to update project name and description', async () => {
+    it('should reject MEMBER from updating project (403)', async () => {
       const { workspaceId, owner, member } = await setupWorkspaceWithMembers();
 
       const createRes = await request(app)
@@ -321,14 +311,35 @@ describe('Projects Integration Tests', () => {
         .set('Cookie', member.cookie)
         .send({ name: 'Updated Name', description: 'New description' });
 
-      expect(res.status).toBe(200);
-      expect(res.body.project.name).toBe('Updated Name');
-      expect(res.body.project.description).toBe('New description');
+      expect(res.status).toBe(403);
+      expect(res.body.error.code).toBe('WORKSPACE_ACCESS_DENIED');
+    });
 
-      const dbProject = await prisma.project.findUnique({
-        where: { id: projectId },
-      });
-      expect(dbProject?.name).toBe('Updated Name');
+    it('should allow ADMIN and OWNER to update project name and description (200)', async () => {
+      const { workspaceId, owner, admin } = await setupWorkspaceWithMembers();
+
+      const createRes = await request(app)
+        .post(`/api/workspaces/${workspaceId}/projects`)
+        .set('Cookie', owner.cookie)
+        .send({ name: 'Initial Name', description: 'Old desc' });
+
+      const projectId = createRes.body.project.id;
+
+      const adminUpdateRes = await request(app)
+        .patch(`/api/projects/${projectId}`)
+        .set('Cookie', admin.cookie)
+        .send({ name: 'Admin Updated Name', description: 'Admin description' });
+
+      expect(adminUpdateRes.status).toBe(200);
+      expect(adminUpdateRes.body.project.name).toBe('Admin Updated Name');
+
+      const ownerUpdateRes = await request(app)
+        .patch(`/api/projects/${projectId}`)
+        .set('Cookie', owner.cookie)
+        .send({ name: 'Owner Updated Name', description: 'Owner description' });
+
+      expect(ownerUpdateRes.status).toBe(200);
+      expect(ownerUpdateRes.body.project.name).toBe('Owner Updated Name');
     });
   });
 
@@ -351,8 +362,26 @@ describe('Projects Integration Tests', () => {
       expect(res.body.error.code).toBe('PROJECT_NOT_FOUND');
     });
 
-    it('should allow MEMBER to delete project and cascade tasks (204)', async () => {
+    it('should reject MEMBER from deleting project (403)', async () => {
       const { workspaceId, owner, member } = await setupWorkspaceWithMembers();
+
+      const createRes = await request(app)
+        .post(`/api/workspaces/${workspaceId}/projects`)
+        .set('Cookie', owner.cookie)
+        .send({ name: 'Project with Tasks' });
+
+      const projectId = createRes.body.project.id;
+
+      const res = await request(app)
+        .delete(`/api/projects/${projectId}`)
+        .set('Cookie', member.cookie);
+
+      expect(res.status).toBe(403);
+      expect(res.body.error.code).toBe('WORKSPACE_ACCESS_DENIED');
+    });
+
+    it('should allow ADMIN and OWNER to delete project and cascade tasks (204)', async () => {
+      const { workspaceId, owner, admin } = await setupWorkspaceWithMembers();
 
       const createRes = await request(app)
         .post(`/api/workspaces/${workspaceId}/projects`)
@@ -370,10 +399,10 @@ describe('Projects Integration Tests', () => {
         },
       });
 
-      // Member deletes the project
+      // Admin deletes the project
       const res = await request(app)
         .delete(`/api/projects/${projectId}`)
-        .set('Cookie', member.cookie);
+        .set('Cookie', admin.cookie);
 
       expect(res.status).toBe(204);
 

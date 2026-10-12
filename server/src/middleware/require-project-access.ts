@@ -1,9 +1,11 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction, RequestHandler } from 'express';
+import { WorkspaceRole } from '@prisma/client';
 import prisma from '../lib/db/prisma';
 import { AppError } from '../errors/app-error';
 import { ErrorCode } from '../errors/error-codes';
 
-export async function requireProjectAccess(
+async function handleProjectAccess(
+  allowedRoles: WorkspaceRole[] | undefined,
   req: Request,
   _res: Response,
   next: NextFunction
@@ -50,10 +52,48 @@ export async function requireProjectAccess(
       );
     }
 
+    if (allowedRoles && !allowedRoles.includes(membership.role)) {
+      if (allowedRoles.length === 1 && allowedRoles[0] === 'OWNER') {
+        return next(
+          AppError.unauthorized(
+            'Only the workspace owner can perform this action.',
+            ErrorCode.OWNER_REQUIRED
+          )
+        );
+      }
+
+      return next(
+        AppError.unauthorized(
+          'You do not have permission to perform this action.',
+          ErrorCode.WORKSPACE_ACCESS_DENIED
+        )
+      );
+    }
+
     req.project = project;
     req.workspaceMember = membership;
     next();
   } catch (error) {
     next(error);
   }
+}
+
+export function requireProjectAccess(allowedRoles?: WorkspaceRole[]): RequestHandler;
+export function requireProjectAccess(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void>;
+export function requireProjectAccess(
+  allowedRolesOrReq?: WorkspaceRole[] | Request,
+  res?: Response,
+  next?: NextFunction
+): any {
+  if (allowedRolesOrReq && 'session' in allowedRolesOrReq) {
+    return handleProjectAccess(undefined, allowedRolesOrReq as Request, res!, next!);
+  }
+
+  const allowedRoles = allowedRolesOrReq as WorkspaceRole[] | undefined;
+  return (req: Request, res: Response, next: NextFunction) =>
+    handleProjectAccess(allowedRoles, req, res, next);
 }

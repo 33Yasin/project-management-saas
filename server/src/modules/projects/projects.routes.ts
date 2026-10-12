@@ -28,6 +28,7 @@ workspaceProjectsRouter.get(
 
 workspaceProjectsRouter.post(
   '/',
+  requireWorkspaceRole(['OWNER', 'ADMIN']),
   validate({ params: workspaceIdParamSchema, body: createProjectSchema }),
   (req, res, next) => {
     projectsController.create(req, res, next);
@@ -51,7 +52,7 @@ projectsRouter.get(
 projectsRouter.patch(
   '/:projectId',
   validate({ params: projectIdParamSchema, body: updateProjectSchema }),
-  requireProjectAccess,
+  requireProjectAccess(['OWNER', 'ADMIN']),
   (req, res, next) => {
     projectsController.update(req, res, next);
   }
@@ -60,7 +61,7 @@ projectsRouter.patch(
 projectsRouter.delete(
   '/:projectId',
   validate({ params: projectIdParamSchema }),
-  requireProjectAccess,
+  requireProjectAccess(['OWNER', 'ADMIN']),
   (req, res, next) => {
     projectsController.delete(req, res, next);
   }

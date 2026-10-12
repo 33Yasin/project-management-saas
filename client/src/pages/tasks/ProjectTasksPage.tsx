@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { useProject } from '@/features/projects/use-projects';
 import { useProjectTasks } from '@/features/tasks/use-tasks';
-import { useWorkspaceMembers } from '@/features/workspaces/use-workspaces';
+import { useWorkspace, useWorkspaceMembers } from '@/features/workspaces/use-workspaces';
 import { useLanguage } from '@/lib/i18n/language-context';
 import { apiFetch } from '@/lib/api/api-fetch';
 import { cn } from '@/lib/utils';
@@ -45,6 +45,8 @@ export default function ProjectTasksPage() {
   const { workspaceId: paramWsId, projectId } = useParams<{ workspaceId?: string; projectId: string }>();
   const { project, updateProject } = useProject(projectId);
   const currentWorkspaceId = paramWsId || project?.workspaceId;
+  const { workspace } = useWorkspace(currentWorkspaceId);
+  const canManageProject = workspace?.role === 'OWNER' || workspace?.role === 'ADMIN';
   const { members } = useWorkspaceMembers(currentWorkspaceId);
   const { t } = useLanguage();
 
@@ -208,17 +210,19 @@ export default function ProjectTasksPage() {
           </div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold tracking-tight">{project?.name}</h1>
-            <button
-              onClick={() => {
-                setEditName(project?.name || '');
-                setEditDesc(project?.description || '');
-                setEditProjectOpen(true);
-              }}
-              title={t('projects.editProject')}
-              className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
-            >
-              <Edit2 className="size-3.5" />
-            </button>
+            {canManageProject && (
+              <button
+                onClick={() => {
+                  setEditName(project?.name || '');
+                  setEditDesc(project?.description || '');
+                  setEditProjectOpen(true);
+                }}
+                title={t('projects.editProject')}
+                className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
+              >
+                <Edit2 className="size-3.5" />
+              </button>
+            )}
           </div>
           {project?.description && (
             <p className="text-sm text-muted-foreground mt-0.5">{project.description}</p>
