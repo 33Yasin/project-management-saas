@@ -8,6 +8,8 @@ import {
   createProjectSchema,
   updateProjectSchema,
   projectIdParamSchema,
+  addProjectMemberSchema,
+  projectMemberParamSchema,
 } from './projects.schemas';
 import { workspaceIdParamSchema } from '../workspaces/workspaces.schemas';
 import { projectTasksRouter } from '../tasks/tasks.routes';
@@ -64,6 +66,34 @@ projectsRouter.delete(
   requireProjectAccess(['OWNER', 'ADMIN']),
   (req, res, next) => {
     projectsController.delete(req, res, next);
+  }
+);
+
+// Project member management
+projectsRouter.get(
+  '/:projectId/members',
+  validate({ params: projectIdParamSchema }),
+  requireProjectAccess,
+  (req, res, next) => {
+    projectsController.getMembers(req, res, next);
+  }
+);
+
+projectsRouter.post(
+  '/:projectId/members',
+  validate({ params: projectIdParamSchema, body: addProjectMemberSchema }),
+  requireProjectAccess(['OWNER', 'ADMIN']),
+  (req, res, next) => {
+    projectsController.addMember(req, res, next);
+  }
+);
+
+projectsRouter.delete(
+  '/:projectId/members/:userId',
+  validate({ params: projectMemberParamSchema }),
+  requireProjectAccess(['OWNER', 'ADMIN']),
+  (req, res, next) => {
+    projectsController.removeMember(req, res, next);
   }
 );
 

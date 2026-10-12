@@ -48,7 +48,7 @@ describe('Tasks Integration Tests', () => {
     const projRes = await request(app)
       .post(`/api/workspaces/${workspaceId}/projects`)
       .set('Cookie', owner.cookie)
-      .send({ name: 'Alpha Project' });
+      .send({ name: 'Alpha Project', memberIds: [member.user.id] });
 
     const projectId = projRes.body.project.id;
 

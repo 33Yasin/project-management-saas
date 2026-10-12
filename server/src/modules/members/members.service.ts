@@ -117,8 +117,34 @@ export class MembersService {
       );
     }
 
-    await prisma.workspaceMember.delete({
-      where: { id: memberId },
+    await prisma.$transaction(async (tx) => {
+      // Remove project memberships within this workspace
+      await tx.projectMember.deleteMany({
+        where: {
+          userId: targetMember.userId,
+          project: {
+            workspaceId,
+          },
+        },
+      });
+
+      // Clear task assignments within this workspace
+      await tx.task.updateMany({
+        where: {
+          assigneeId: targetMember.userId,
+          project: {
+            workspaceId,
+          },
+        },
+        data: {
+          assigneeId: null,
+        },
+      });
+
+      // Remove workspace member
+      await tx.workspaceMember.delete({
+        where: { id: memberId },
+      });
     });
   }
 }

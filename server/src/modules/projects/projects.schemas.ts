@@ -12,6 +12,7 @@ export const createProjectSchema = z.object({
     .max(500, 'Description must be at most 500 characters')
     .optional()
     .nullable(),
+  memberIds: z.array(z.string().trim().min(1)).optional(),
 });
 
 export const updateProjectSchema = z
@@ -28,14 +29,32 @@ export const updateProjectSchema = z
       .max(500, 'Description must be at most 500 characters')
       .optional()
       .nullable(),
+    memberIds: z.array(z.string().trim().min(1)).optional(),
   })
-  .refine((data) => data.name !== undefined || data.description !== undefined, {
-    message: 'At least one field (name or description) must be provided for update',
-  });
+  .refine(
+    (data) =>
+      data.name !== undefined ||
+      data.description !== undefined ||
+      data.memberIds !== undefined,
+    {
+      message:
+        'At least one field (name, description, or memberIds) must be provided for update',
+    }
+  );
 
 export const projectIdParamSchema = z.object({
   projectId: z.string().trim().min(1, 'Project ID is required'),
 });
 
+export const addProjectMemberSchema = z.object({
+  userId: z.string().trim().min(1, 'User ID is required'),
+});
+
+export const projectMemberParamSchema = z.object({
+  projectId: z.string().trim().min(1, 'Project ID is required'),
+  userId: z.string().trim().min(1, 'User ID is required'),
+});
+
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
+export type AddProjectMemberInput = z.infer<typeof addProjectMemberSchema>;

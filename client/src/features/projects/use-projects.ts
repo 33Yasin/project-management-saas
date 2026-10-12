@@ -22,7 +22,7 @@ export function useProjects(workspaceId?: string) {
   });
 
   const createProjectMutation = useMutation({
-    mutationFn: async (data: { name: string; description?: string }) => {
+    mutationFn: async (data: { name: string; description?: string; memberIds?: string[] }) => {
       const res = await apiFetch<{ project: Project }>(
         `/api/workspaces/${workspaceId}/projects`,
         {
@@ -65,7 +65,11 @@ export function useProject(projectId?: string) {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (data: { name?: string; description?: string | null }) => {
+    mutationFn: async (data: {
+      name?: string;
+      description?: string | null;
+      memberIds?: string[];
+    }) => {
       const res = await apiFetch<{ project: Project }>(`/api/projects/${projectId}`, {
         method: 'PATCH',
         body: data,
@@ -100,5 +104,67 @@ export function useProject(projectId?: string) {
     isUpdating: updateMutation.isPending,
     deleteProject: deleteMutation.mutateAsync,
     isDeleting: deleteMutation.isPending,
+  };
+}
+
+export function useProjectMembers(projectId?: string) {
+  const queryClient = useQueryClient();
+
+  const {
+    data: members = [],
+    isLoading,
+    isError,
+    error,
+  } = useQuery<import('@/types/api').ProjectMember[]>({
+    queryKey: ['project-members', projectId],
+    queryFn: async () => {
+      const res = await apiFetch<{ members: import('@/types/api').ProjectMember[] }>(
+        `/api/projects/${projectId}/members`
+      );
+      return res.members;
+    },
+    enabled: !!projectId,
+  });
+
+  const addMemberMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const res = await apiFetch<{ member: import('@/types/api').ProjectMember }>(
+        `/api/projects/${projectId}/members`,
+        {
+          method: 'POST',
+          body: { userId },
+        }
+      );
+      return res.member;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['project-members', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['project', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+    },
+  });
+
+  const removeMemberMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      await apiFetch(`/api/projects/${projectId}/members/${userId}`, {
+        method: 'DELETE',
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['project-members', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['project', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+    },
+  });
+
+  return {
+    members,
+    isLoading,
+    isError,
+    error,
+    addMember: addMemberMutation.mutateAsync,
+    isAdding: addMemberMutation.isPending,
+    removeMember: removeMemberMutation.mutateAsync,
+    isRemoving: removeMemberMutation.isPending,
   };
 }

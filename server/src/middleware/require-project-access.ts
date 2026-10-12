@@ -70,6 +70,34 @@ async function handleProjectAccess(
       );
     }
 
+    // For regular MEMBER role, verify they belong to this project or have assigned tasks
+    if (membership.role === 'MEMBER') {
+      const isProjectMember = await prisma.projectMember.findUnique({
+        where: {
+          projectId_userId: {
+            projectId,
+            userId,
+          },
+        },
+      });
+
+      if (!isProjectMember) {
+        const hasAssignedTask = await prisma.task.findFirst({
+          where: {
+            projectId,
+            assigneeId: userId,
+          },
+          select: { id: true },
+        });
+
+        if (!hasAssignedTask) {
+          return next(
+            AppError.notFound('Project not found or access denied.', ErrorCode.PROJECT_NOT_FOUND)
+          );
+        }
+      }
+    }
+
     req.project = project;
     req.workspaceMember = membership;
     next();
@@ -88,7 +116,7 @@ export function requireProjectAccess(
   allowedRolesOrReq?: WorkspaceRole[] | Request,
   res?: Response,
   next?: NextFunction
-): any {
+): RequestHandler | Promise<void> {
   if (allowedRolesOrReq && 'session' in allowedRolesOrReq) {
     return handleProjectAccess(undefined, allowedRolesOrReq as Request, res!, next!);
   }

@@ -37,14 +37,15 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  memberships     WorkspaceMember[]
-  sentInvitations Invitation[]
-  assignedTasks   Task[]            @relation("TaskAssignee")
-  createdTasks    Task[]            @relation("TaskCreator")
-  comments        Comment[]
-  activities      Activity[]
-  attachments     Attachment[]
-  notifications   Notification[]
+  memberships        WorkspaceMember[]
+  projectMemberships ProjectMember[]
+  sentInvitations    Invitation[]
+  assignedTasks      Task[]            @relation("TaskAssignee")
+  createdTasks       Task[]            @relation("TaskCreator")
+  comments           Comment[]
+  activities         Activity[]
+  attachments        Attachment[]
+  notifications      Notification[]
 }
 
 model Workspace {
@@ -100,11 +101,26 @@ model Project {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  workspace  Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspace  Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   tasks      Task[]
   activities Activity[]
+  members    ProjectMember[]
 
   @@index([workspaceId])
+}
+
+model ProjectMember {
+  id        String   @id @default(uuid())
+  projectId String
+  userId    String
+  createdAt DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@index([userId])
+  @@index([projectId])
 }
 
 model Task {

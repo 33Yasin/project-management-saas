@@ -165,20 +165,21 @@ describe('Projects Integration Tests', () => {
       expect(res.body.error.code).toBe('WORKSPACE_NOT_FOUND');
     });
 
-    it('should list only projects of the target workspace for members', async () => {
-      const { workspaceId, otherWorkspaceId, owner, member, outsider } =
+    it('should list only assigned projects for MEMBER, while OWNER and ADMIN see all projects', async () => {
+      const { workspaceId, otherWorkspaceId, owner, admin, member, outsider } =
         await setupWorkspaceWithMembers();
 
-      // Create 2 projects in primary workspace by OWNER
+      // Create Project 1 assigned to MEMBER
       await request(app)
         .post(`/api/workspaces/${workspaceId}/projects`)
         .set('Cookie', owner.cookie)
-        .send({ name: 'Project 1' });
+        .send({ name: 'Project 1 (Assigned)', memberIds: [member.user.id] });
 
+      // Create Project 2 NOT assigned to MEMBER
       await request(app)
         .post(`/api/workspaces/${workspaceId}/projects`)
         .set('Cookie', owner.cookie)
-        .send({ name: 'Project 2' });
+        .send({ name: 'Project 2 (Unassigned)' });
 
       // Create 1 project in outsider's workspace
       await request(app)
@@ -186,17 +187,30 @@ describe('Projects Integration Tests', () => {
         .set('Cookie', outsider.cookie)
         .send({ name: 'Secret Other Project' });
 
-      // Member queries primary workspace
-      const res = await request(app)
+      // Member queries primary workspace: sees only Project 1
+      const memberRes = await request(app)
         .get(`/api/workspaces/${workspaceId}/projects`)
         .set('Cookie', member.cookie);
 
-      expect(res.status).toBe(200);
-      expect(res.body.projects).toHaveLength(2);
-      expect(res.body.projects.map((p: any) => p.name)).toEqual([
-        'Project 2',
-        'Project 1',
-      ]);
+      expect(memberRes.status).toBe(200);
+      expect(memberRes.body.projects).toHaveLength(1);
+      expect(memberRes.body.projects[0].name).toBe('Project 1 (Assigned)');
+
+      // Admin queries primary workspace: sees all projects
+      const adminRes = await request(app)
+        .get(`/api/workspaces/${workspaceId}/projects`)
+        .set('Cookie', admin.cookie);
+
+      expect(adminRes.status).toBe(200);
+      expect(adminRes.body.projects).toHaveLength(2);
+
+      // Owner queries primary workspace: sees all projects
+      const ownerRes = await request(app)
+        .get(`/api/workspaces/${workspaceId}/projects`)
+        .set('Cookie', owner.cookie);
+
+      expect(ownerRes.status).toBe(200);
+      expect(ownerRes.body.projects).toHaveLength(2);
     });
   });
 
@@ -236,13 +250,35 @@ describe('Projects Integration Tests', () => {
       expect(res.body.error.code).toBe('PROJECT_NOT_FOUND');
     });
 
-    it('should allow MEMBER to fetch project details (200)', async () => {
+    it('should return 404 when unassigned MEMBER requests project details', async () => {
       const { workspaceId, owner, member } = await setupWorkspaceWithMembers();
 
       const createRes = await request(app)
         .post(`/api/workspaces/${workspaceId}/projects`)
         .set('Cookie', owner.cookie)
-        .send({ name: 'Team Roadmap', description: 'Q4 milestones' });
+        .send({ name: 'Private Admin Project' });
+
+      const projectId = createRes.body.project.id;
+
+      const res = await request(app)
+        .get(`/api/projects/${projectId}`)
+        .set('Cookie', member.cookie);
+
+      expect(res.status).toBe(404);
+      expect(res.body.error.code).toBe('PROJECT_NOT_FOUND');
+    });
+
+    it('should allow assigned MEMBER to fetch project details (200)', async () => {
+      const { workspaceId, owner, member } = await setupWorkspaceWithMembers();
+
+      const createRes = await request(app)
+        .post(`/api/workspaces/${workspaceId}/projects`)
+        .set('Cookie', owner.cookie)
+        .send({
+          name: 'Team Roadmap',
+          description: 'Q4 milestones',
+          memberIds: [member.user.id],
+        });
 
       const projectId = createRes.body.project.id;
 
@@ -417,6 +453,79 @@ describe('Projects Integration Tests', () => {
         where: { id: task.id },
       });
       expect(dbTask).toBeNull();
+    });
+  });
+
+  describe('Project Members Management (/api/projects/:projectId/members)', () => {
+    it('should allow ADMIN to add and remove a MEMBER from a project', async () => {
+      const { workspaceId, owner, admin, member } = await setupWorkspaceWithMembers();
+
+      // Owner creates a project initially without member
+      const createRes = await request(app)
+        .post(`/api/workspaces/${workspaceId}/projects`)
+        .set('Cookie', owner.cookie)
+        .send({ name: 'Cross-functional Project' });
+
+      const projectId = createRes.body.project.id;
+
+      // Member cannot access project yet (404)
+      const unassignedRes = await request(app)
+        .get(`/api/projects/${projectId}`)
+        .set('Cookie', member.cookie);
+      expect(unassignedRes.status).toBe(404);
+
+      // Admin adds member to project
+      const addRes = await request(app)
+        .post(`/api/projects/${projectId}/members`)
+        .set('Cookie', admin.cookie)
+        .send({ userId: member.user.id });
+
+      expect(addRes.status).toBe(201);
+      expect(addRes.body.member.userId).toBe(member.user.id);
+
+      // Member can now fetch project details (200)
+      const assignedRes = await request(app)
+        .get(`/api/projects/${projectId}`)
+        .set('Cookie', member.cookie);
+      expect(assignedRes.status).toBe(200);
+
+      // List members includes the assigned member
+      const listMembersRes = await request(app)
+        .get(`/api/projects/${projectId}/members`)
+        .set('Cookie', member.cookie);
+      expect(listMembersRes.status).toBe(200);
+      expect(listMembersRes.body.members.some((m: any) => m.userId === member.user.id)).toBe(true);
+
+      // Admin removes member from project
+      const removeRes = await request(app)
+        .delete(`/api/projects/${projectId}/members/${member.user.id}`)
+        .set('Cookie', admin.cookie);
+      expect(removeRes.status).toBe(204);
+
+      // Member immediately loses access (404)
+      const afterRemoveRes = await request(app)
+        .get(`/api/projects/${projectId}`)
+        .set('Cookie', member.cookie);
+      expect(afterRemoveRes.status).toBe(404);
+    });
+
+    it('should reject MEMBER from adding members to a project (403)', async () => {
+      const { workspaceId, owner, member } = await setupWorkspaceWithMembers();
+
+      const createRes = await request(app)
+        .post(`/api/workspaces/${workspaceId}/projects`)
+        .set('Cookie', owner.cookie)
+        .send({ name: 'Restricted Project', memberIds: [member.user.id] });
+
+      const projectId = createRes.body.project.id;
+
+      const addRes = await request(app)
+        .post(`/api/projects/${projectId}/members`)
+        .set('Cookie', member.cookie)
+        .send({ userId: owner.user.id });
+
+      expect(addRes.status).toBe(403);
+      expect(addRes.body.error.code).toBe('WORKSPACE_ACCESS_DENIED');
     });
   });
 });

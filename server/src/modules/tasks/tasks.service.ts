@@ -147,6 +147,22 @@ export class TasksService {
       },
     });
 
+    if (task.assigneeId) {
+      await prisma.projectMember.upsert({
+        where: {
+          projectId_userId: {
+            projectId,
+            userId: task.assigneeId,
+          },
+        },
+        create: {
+          projectId,
+          userId: task.assigneeId,
+        },
+        update: {},
+      });
+    }
+
     if (task.assigneeId && task.assigneeId !== createdById) {
       await notificationService.createNotification({
         userId: task.assigneeId,
@@ -257,6 +273,22 @@ export class TasksService {
             assigneeName: task.assignee?.name ?? null,
           },
         });
+
+        if (input.assigneeId) {
+          await prisma.projectMember.upsert({
+            where: {
+              projectId_userId: {
+                projectId: existingTask.projectId,
+                userId: input.assigneeId,
+              },
+            },
+            create: {
+              projectId: existingTask.projectId,
+              userId: input.assigneeId,
+            },
+            update: {},
+          });
+        }
 
         if (input.assigneeId && input.assigneeId !== actorId) {
           await notificationService.createNotification({

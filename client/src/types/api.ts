@@ -66,6 +66,18 @@ export interface InvitationPreview {
   };
 }
 
+export interface ProjectMember {
+  id: string;
+  projectId: string;
+  userId: string;
+  createdAt?: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+  };
+}
+
 export interface Project {
   id: string;
   workspaceId: string;
@@ -73,8 +85,10 @@ export interface Project {
   description: string | null;
   createdAt: string;
   updatedAt: string;
+  members?: ProjectMember[];
   _count?: {
     tasks: number;
+    members?: number;
   };
 }
 

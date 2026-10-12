@@ -414,21 +414,21 @@ tetikleyecek şekilde genişletilir; contract gereksiz değiştirilmez.
 
 ## 16. V2 security checklist
 
--   [ ] move endpoint authorization
--   [ ] task başka workspace/project sınırını ihlal edemez
--   [ ] attachment size/type kontrolü
--   [ ] unsafe filename/path traversal engeli
--   [ ] opaque storage key
--   [ ] attachment download authorization
--   [ ] raw invitation token loglanmıyor
--   [ ] email secret server-only
--   [ ] invite abuse/rate limit
--   [ ] notification ownership
--   [ ] activity workspace authorization
--   [ ] email/HTML content güvenli escape
--   [ ] user-generated filename/content güvenli render
--   [ ] dark-mode contrast
--   [ ] storage/provider internal error sızmıyor
+-   [x] move endpoint authorization
+-   [x] task başka workspace/project sınırını ihlal edemez
+-   [x] attachment size/type kontrolü
+-   [x] unsafe filename/path traversal engeli
+-   [x] opaque storage key
+-   [x] attachment download authorization
+-   [x] raw invitation token loglanmıyor
+-   [x] email secret server-only
+-   [x] invite abuse/rate limit
+-   [x] notification ownership
+-   [x] activity workspace authorization
+-   [x] email/HTML content güvenli escape
+-   [x] user-generated filename/content güvenli render
+-   [x] dark-mode contrast
+-   [x] storage/provider internal error sızmıyor
 
 ## 17. Implementation sırası
 
@@ -489,17 +489,17 @@ Kanban, full tests, docs.
 
 Bir V2 feature bitmeden:
 
--   [ ] V1 davranışı bozulmadı
--   [ ] migration review edildi
--   [ ] backend validation + authorization var
--   [ ] error contract tutarlı
--   [ ] backend/frontend ilgili testler var
--   [ ] loading/error/empty UI var
--   [ ] accessibility düşünüldü
--   [ ] TypeScript/lint temiz
--   [ ] sensitive data/log kontrol edildi
--   [ ] dependency gerekçeli
--   [ ] gerçek browser akışı kontrol edildi
+-   [x] V1 davranışı bozulmadı
+-   [x] migration review edildi
+-   [x] backend validation + authorization var
+-   [x] error contract tutarlı
+-   [x] backend/frontend ilgili testler var
+-   [x] loading/error/empty UI var
+-   [x] accessibility düşünüldü
+-   [x] TypeScript/lint temiz
+-   [x] sensitive data/log kontrol edildi
+-   [x] dependency gerekçeli
+-   [x] gerçek browser akışı kontrol edildi
 
 ## 19. V3'e bırakılacaklar
 

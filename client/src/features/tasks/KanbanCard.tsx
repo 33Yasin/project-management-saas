@@ -6,6 +6,7 @@ import type { Task } from '@/types/api';
 import { Badge } from '@/components/ui/badge';
 import { MessageSquare, Calendar, User as UserIcon, GripVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/lib/i18n/language-context';
 
 interface KanbanCardProps {
   task: Task;
@@ -15,6 +16,7 @@ interface KanbanCardProps {
 }
 
 export function KanbanCard({ task, workspaceId, projectId, isOverlay = false }: KanbanCardProps) {
+  const { t } = useLanguage();
   const {
     attributes,
     listeners,
@@ -39,12 +41,12 @@ export function KanbanCard({ task, workspaceId, projectId, isOverlay = false }: 
   const getPriorityBadge = (priority: Task['priority']) => {
     switch (priority) {
       case 'HIGH':
-        return <Badge variant="destructive" className="text-[10px] px-1.5 py-0">High</Badge>;
+        return <Badge variant="destructive" className="text-[10px] px-1.5 py-0">{t('tasks.high')}</Badge>;
       case 'MEDIUM':
-        return <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-amber-500/50 text-amber-600 dark:text-amber-400">Medium</Badge>;
+        return <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-amber-500/50 text-amber-600 dark:text-amber-400">{t('tasks.medium')}</Badge>;
       case 'LOW':
       default:
-        return <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Low</Badge>;
+        return <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{t('tasks.low')}</Badge>;
     }
   };
 
@@ -121,7 +123,7 @@ export function KanbanCard({ task, workspaceId, projectId, isOverlay = false }: 
               <span className="truncate">{task.assignee.name.split(' ')[0]}</span>
             </span>
           ) : (
-            <span title="Unassigned">
+            <span title={t('tasks.unassigned')}>
               <UserIcon className="size-3.5 text-muted-foreground/30" />
             </span>
           )}

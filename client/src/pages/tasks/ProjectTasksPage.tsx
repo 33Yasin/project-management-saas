@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
-import { useProject } from '@/features/projects/use-projects';
+import { useProject, useProjectMembers } from '@/features/projects/use-projects';
 import { useProjectTasks } from '@/features/tasks/use-tasks';
 import { useWorkspace, useWorkspaceMembers } from '@/features/workspaces/use-workspaces';
 import { useLanguage } from '@/lib/i18n/language-context';
@@ -39,6 +39,9 @@ import {
   Kanban,
   Paperclip,
   X,
+  Users,
+  UserPlus,
+  Trash2,
 } from 'lucide-react';
 
 export default function ProjectTasksPage() {
@@ -47,8 +50,26 @@ export default function ProjectTasksPage() {
   const currentWorkspaceId = paramWsId || project?.workspaceId;
   const { workspace } = useWorkspace(currentWorkspaceId);
   const canManageProject = workspace?.role === 'OWNER' || workspace?.role === 'ADMIN';
-  const { members } = useWorkspaceMembers(currentWorkspaceId);
+  const { members = [] } = useWorkspaceMembers(currentWorkspaceId);
+  const {
+    members: projectMembers = [],
+    addMember: addProjectMember,
+    removeMember: removeProjectMember,
+    isAdding: isAddingProjectMember,
+    isRemoving: isRemovingProjectMember,
+  } = useProjectMembers(projectId);
   const { t } = useLanguage();
+
+  const [membersDialogOpen, setMembersDialogOpen] = useState(false);
+  const [selectedAddUserId, setSelectedAddUserId] = useState('');
+  const [memberActionError, setMemberActionError] = useState<string | null>(null);
+
+  const projectMemberUserIds = new Set(projectMembers.map((pm) => pm.userId));
+  const availableWorkspaceMembers = members.filter((m) => !projectMemberUserIds.has(m.userId));
+  const assignableUsers =
+    projectMembers.length > 0
+      ? projectMembers.map((pm) => ({ userId: pm.userId, name: pm.user.name, email: pm.user.email }))
+      : members.map((m) => ({ userId: m.userId, name: m.user.name, email: m.user.email }));
 
   const [searchParams, setSearchParams] = useSearchParams();
   const viewMode = searchParams.get('view') === 'board' ? 'board' : 'list';
@@ -223,6 +244,19 @@ export default function ProjectTasksPage() {
                 <Edit2 className="size-3.5" />
               </button>
             )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setMemberActionError(null);
+                setSelectedAddUserId('');
+                setMembersDialogOpen(true);
+              }}
+              className="h-7 px-2 text-xs gap-1.5 cursor-pointer ml-1"
+            >
+              <Users className="size-3.5" />
+              <span>{projectMembers.length} {t('projects.membersBadge')}</span>
+            </Button>
           </div>
           {project?.description && (
             <p className="text-sm text-muted-foreground mt-0.5">{project.description}</p>
@@ -330,9 +364,9 @@ export default function ProjectTasksPage() {
               className="h-9 text-xs"
             >
               <option value="">{t('tasks.allAssignees')}</option>
-              {members.map((m) => (
-                <option key={m.userId} value={m.userId}>
-                  {m.user.name}
+              {assignableUsers.map((u) => (
+                <option key={u.userId} value={u.userId}>
+                  {u.name}
                 </option>
               ))}
             </Select>
@@ -669,9 +703,9 @@ export default function ProjectTasksPage() {
                   onChange={(e) => setNewAssigneeId(e.target.value)}
                 >
                   <option value="">{t('tasks.unassigned')}</option>
-                  {members.map((m) => (
-                    <option key={m.userId} value={m.userId}>
-                      {m.user.name} ({m.role})
+                  {assignableUsers.map((u) => (
+                    <option key={u.userId} value={u.userId}>
+                      {u.name}
                     </option>
                   ))}
                 </Select>
@@ -749,6 +783,117 @@ export default function ProjectTasksPage() {
             </Button>
           </DialogFooter>
         </form>
+      </Dialog>
+
+      {/* Project Members Dialog */}
+      <Dialog open={membersDialogOpen} onOpenChange={setMembersDialogOpen}>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Users className="size-5 text-primary" />
+            <span>{t('projects.projectMembers')}</span>
+          </DialogTitle>
+          <DialogDescription>
+            {t('projects.projectMembersDesc')}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-2">
+          {memberActionError && (
+            <div className="p-2.5 text-xs rounded-md bg-destructive/15 text-destructive border border-destructive/20">
+              {memberActionError}
+            </div>
+          )}
+
+          {canManageProject && (
+            <div className="flex items-center gap-2">
+              <Select
+                value={selectedAddUserId}
+                onChange={(e) => setSelectedAddUserId(e.target.value)}
+                className="h-9 text-xs flex-1"
+              >
+                <option value="">{t('workspaces.selectMember')}</option>
+                {availableWorkspaceMembers.map((m) => (
+                  <option key={m.userId} value={m.userId}>
+                    {m.user.name} ({m.user.email}) - {m.role}
+                  </option>
+                ))}
+              </Select>
+              <Button
+                size="sm"
+                disabled={!selectedAddUserId || isAddingProjectMember}
+                onClick={async () => {
+                  if (!selectedAddUserId) return;
+                  try {
+                    setMemberActionError(null);
+                    await addProjectMember(selectedAddUserId);
+                    setSelectedAddUserId('');
+                  } catch (err) {
+                    setMemberActionError(err instanceof Error ? err.message : 'Failed to add member');
+                  }
+                }}
+                className="cursor-pointer gap-1.5 h-9"
+              >
+                <UserPlus className="size-3.5" />
+                {t('projects.addMemberToProject')}
+              </Button>
+            </div>
+          )}
+
+          <div className="space-y-1.5 max-h-60 overflow-y-auto rounded-md border p-2 bg-muted/20">
+            {projectMembers.length === 0 ? (
+              <p className="text-xs text-muted-foreground p-3 text-center">
+                {t('projects.noProjectMembers')}
+              </p>
+            ) : (
+              projectMembers.map((pm) => (
+                <div
+                  key={pm.id}
+                  className="flex items-center justify-between p-2 rounded-md hover:bg-muted text-xs gap-3"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="size-7 rounded-full bg-primary/10 text-primary font-semibold flex items-center justify-center text-xs shrink-0">
+                      {pm.user.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="truncate">
+                      <p className="font-medium text-foreground truncate">{pm.user.name}</p>
+                      <p className="text-[11px] text-muted-foreground truncate">{pm.user.email}</p>
+                    </div>
+                  </div>
+
+                  {canManageProject && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={isRemovingProjectMember}
+                      onClick={async () => {
+                        try {
+                          setMemberActionError(null);
+                          await removeProjectMember(pm.userId);
+                        } catch (err) {
+                          setMemberActionError(err instanceof Error ? err.message : 'Failed to remove member');
+                        }
+                      }}
+                      className="text-muted-foreground hover:text-destructive size-7 p-0 cursor-pointer"
+                      title={t('projects.removeMemberFromProject')}
+                    >
+                      <Trash2 className="size-3.5" />
+                    </Button>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setMembersDialogOpen(false)}
+          >
+            {t('common.close')}
+          </Button>
+        </DialogFooter>
       </Dialog>
     </div>
   );

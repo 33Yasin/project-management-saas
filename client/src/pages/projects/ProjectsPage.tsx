@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useProjects } from '@/features/projects/use-projects';
-import { useWorkspace } from '@/features/workspaces/use-workspaces';
+import { useWorkspace, useWorkspaceMembers } from '@/features/workspaces/use-workspaces';
 import { useLanguage } from '@/lib/i18n/language-context';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -23,12 +23,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { FolderKanban, Plus, ArrowRight, CheckSquare } from 'lucide-react';
+import { FolderKanban, Plus, ArrowRight, CheckSquare, Users } from 'lucide-react';
 
 export default function ProjectsPage() {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const { workspace } = useWorkspace(workspaceId);
   const { projects, isLoading, createProject, isCreating } = useProjects(workspaceId);
+  const { members = [] } = useWorkspaceMembers(workspaceId);
   const { t } = useLanguage();
 
   const canCreateProject = workspace?.role === 'OWNER' || workspace?.role === 'ADMIN';
@@ -36,6 +37,7 @@ export default function ProjectsPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
   const [createError, setCreateError] = useState<string | null>(null);
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -47,9 +49,11 @@ export default function ProjectsPage() {
       await createProject({
         name: name.trim(),
         description: description.trim() || undefined,
+        memberIds: selectedMemberIds.length > 0 ? selectedMemberIds : undefined,
       });
       setName('');
       setDescription('');
+      setSelectedMemberIds([]);
       setCreateOpen(false);
     } catch (err) {
       setCreateError(err instanceof Error ? err.message : 'Failed to create project');
@@ -105,10 +109,16 @@ export default function ProjectsPage() {
                   <div className="size-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold">
                     <FolderKanban className="size-5" />
                   </div>
-                  <Badge variant="secondary" className="flex items-center gap-1">
-                    <CheckSquare className="size-3" />
-                    <span>{t('projects.tasksCount', { count: project._count?.tasks || 0 })}</span>
-                  </Badge>
+                  <div className="flex items-center gap-1.5">
+                    <Badge variant="outline" className="flex items-center gap-1 text-xs">
+                      <Users className="size-3" />
+                      <span>{project._count?.members ?? project.members?.length ?? 0} {t('projects.membersBadge')}</span>
+                    </Badge>
+                    <Badge variant="secondary" className="flex items-center gap-1 text-xs">
+                      <CheckSquare className="size-3" />
+                      <span>{t('projects.tasksCount', { count: project._count?.tasks || 0 })}</span>
+                    </Badge>
+                  </div>
                 </div>
                 <CardTitle className="text-lg group-hover:text-primary transition-colors">
                   {project.name}
@@ -168,6 +178,43 @@ export default function ProjectsPage() {
                 rows={3}
               />
             </div>
+            {members.length > 0 && (
+              <div className="space-y-1.5">
+                <Label>{t('projects.assignMembers')}</Label>
+                <p className="text-xs text-muted-foreground">{t('projects.assignMembersDesc')}</p>
+                <div className="max-h-36 overflow-y-auto space-y-1 rounded-md border p-2 bg-muted/20">
+                  {members.map((member) => {
+                    const isSelected = selectedMemberIds.includes(member.userId);
+                    return (
+                      <label
+                        key={member.userId}
+                        className="flex items-center gap-2 p-1.5 rounded-md hover:bg-muted cursor-pointer text-xs select-none"
+                      >
+                        <input
+                          type="checkbox"
+                          className="size-3.5 rounded border-input text-primary focus:ring-primary"
+                          checked={isSelected}
+                          onChange={() => {
+                            setSelectedMemberIds((prev) =>
+                              isSelected
+                                ? prev.filter((id) => id !== member.userId)
+                                : [...prev, member.userId]
+                            );
+                          }}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <span className="font-medium text-foreground">{member.user.name}</span>
+                          <span className="text-muted-foreground ml-1.5">({member.user.email})</span>
+                        </div>
+                        <Badge variant="outline" className="text-[10px] uppercase">
+                          {member.role}
+                        </Badge>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button

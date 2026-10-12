@@ -5,6 +5,7 @@ export async function clearDatabase() {
   await prisma.session.deleteMany();
   await prisma.comment.deleteMany();
   await prisma.task.deleteMany();
+  await prisma.projectMember.deleteMany();
   await prisma.project.deleteMany();
   await prisma.invitation.deleteMany();
   await prisma.workspaceMember.deleteMany();
